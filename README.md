@@ -4,14 +4,14 @@ This repository contains our final project for SWE270P: a multi-agent system
 integrated with the Model Context Protocol (MCP) that generates a complete
 software application from a description and requirements provided via a user interface.
 
-## 🧩 Project Description
+## Project Description
 Our selected project is **Expense Comparator**, a finance tool that allows users to:
 - Input expenses
 - Categorize spending
 - Compare spending across custom time periods
 - View visual expense breakdowns and trends
 
-## 🎯 Project Goals
+## Project Goals
 1. Build a fully functional **multi-agent system** using MCP.
 2. Create a **UI** that accepts a software description + requirements.
 3. Automatically generate:
