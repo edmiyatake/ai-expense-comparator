@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from typing import Tuple
+from dotenv import load_dotenv
 
 from agents.dummy_planner import DummyPlannerAgent
 from agents.requirements_interpreter import RequirementsInterpreterAgent
@@ -18,6 +19,8 @@ from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
 from mcp.tools.usage_tracker import UsageTracker
 
+
+load_dotenv()
 
 def configure_logging() -> None:
     logging.basicConfig(
