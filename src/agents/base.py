@@ -1,42 +1,54 @@
 # src/agents/base.py
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Protocol
 
-from src.mcp.tools.base import LLMTool, FileTool, UsageTrackerTool
+from mcp.tools.base import ToolRegistry
 
 
-class AgentContext:
+class OrchestratorIO(Protocol):
     """
-    Things any agent might need: tools, config, shared state, etc.
-    For now we only pass tools.
+    Minimal protocol for anything that wants to report logs / messages
+    back to the orchestrator or caller.
+
+    For now, the orchestrator itself does not implement this protocol,
+    but you can extend it later.
     """
 
-    def __init__(
-        self,
-        llm: LLMTool,
-        file_tool: FileTool,
-        usage_tracker: UsageTrackerTool,
-    ) -> None:
-        self.llm = llm
-        self.file_tool = file_tool
-        self.usage_tracker = usage_tracker
-        # Later: shared memory, run id, etc.
+    def log(self, message: str) -> None:
+        ...
 
 
 class Agent(ABC):
     """
-    Base class for all agents (Planner, Requirements Interpreter, etc.).
+    Base class for all agents participating in the multi-agent system.
     """
 
-    def __init__(self, name: str, context: AgentContext) -> None:
-        self.name = name
-        self.context = context
+    def __init__(self, name: str, description: str) -> None:
+        self._name = name
+        self._description = description
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def description(self) -> str:
+        return self._description
 
     @abstractmethod
-    async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    def run(
+        self,
+        user_request: str,
+        tools: ToolRegistry,
+        io: OrchestratorIO | None = None,
+    ) -> str:
         """
-        Agents take a 'state' dict and return an updated state.
-        The orchestrator will pass the state from one agent to the next.
+        Execute a single agent pass.
+
+        For the initial dummy planner, this can simply generate a textual plan.
+        In a more advanced design, this might return a full "agent action" object.
         """
-        ...
+        raise NotImplementedError
