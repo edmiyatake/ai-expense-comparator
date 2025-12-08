@@ -12,6 +12,7 @@ from agents.dummy_planner import DummyPlannerAgent
 from agents.requirements_interpreter import RequirementsInterpreterAgent
 from agents.code_generator import CodeGeneratorAgent
 from agents.test_generator import TestGeneratorAgent
+from agents.reviewer import ReviewerAgent
 from mcp.orchestrator import Orchestrator, OrchestratorConfig
 from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
@@ -76,6 +77,7 @@ def main(argv: list[str] | None = None) -> None:
     requirements_agent = RequirementsInterpreterAgent()
     codegen_agent = CodeGeneratorAgent()
     testgen_agent = TestGeneratorAgent()
+    reviewer_agent = ReviewerAgent()
 
     config = OrchestratorConfig()
     orchestrator = Orchestrator(planner, tools, config)
@@ -110,6 +112,17 @@ def main(argv: list[str] | None = None) -> None:
         code_skeleton=codegen_output,
     )
 
+    # 5) Review of all generated artifacts
+    reviewer_output = reviewer_agent.run(
+        user_request=user_request,
+        tools=tools,
+        io=None,
+        planner_plan=orchestrator_output,
+        requirements_text=requirements_output,
+        code_skeleton=codegen_output,
+        test_skeleton=testgen_output,
+    )
+
     print("\n=== Orchestrator Output (Plan / Refined Plan) ===\n")
     print(orchestrator_output)
     print("\n===============================================\n")
@@ -124,6 +137,10 @@ def main(argv: list[str] | None = None) -> None:
 
     print("=== Test Generator Output (Test Skeletons) ===\n")
     print(testgen_output)
+    print("\n=============================================\n")
+
+    print("=== Reviewer Output (Architectural Review) ===\n")
+    print(reviewer_output)
     print("\n=============================================\n")
 
     # --- LLM usage report (satisfies assignment requirement) ---
