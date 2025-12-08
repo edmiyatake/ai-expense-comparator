@@ -9,7 +9,6 @@ from typing import Optional
 from agents.base import Agent
 from mcp.tools.base import ToolRegistry, ToolContext, ToolResult
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +28,11 @@ class OrchestratorConfig:
 
 class Orchestrator:
     """
-    Main entry point for coordinating agents and tools in the MCP-style system.
+    Orchestrator that coordinates the planner agent and (optionally) the LLM tool.
+
+    Flow:
+      1. Planner agent creates a high-level implementation plan.
+      2. Optional LLM refinement turns that into a polished outline.
     """
 
     def __init__(
@@ -43,9 +46,6 @@ class Orchestrator:
         self._config = config or OrchestratorConfig()
 
     def log(self, message: str) -> None:
-        """
-        Simple logging hook so agents can optionally report progress.
-        """
         logger.info(message)
 
     def run(self, user_request: str) -> str:

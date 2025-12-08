@@ -6,8 +6,10 @@ import argparse
 import logging
 import os
 import sys
+from typing import Tuple
 
 from agents.dummy_planner import DummyPlannerAgent
+from agents.requirements_interpreter import RequirementsInterpreterAgent
 from mcp.orchestrator import Orchestrator, OrchestratorConfig
 from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
@@ -21,7 +23,7 @@ def configure_logging() -> None:
     )
 
 
-def build_tool_registry() -> tuple[ToolRegistry, UsageTracker]:
+def build_tool_registry() -> Tuple[ToolRegistry, UsageTracker]:
     """
     Create the ToolRegistry and attach a UsageTracker to the LLM tool.
 
@@ -69,14 +71,29 @@ def main(argv: list[str] | None = None) -> None:
 
     tools, usage_tracker = build_tool_registry()
     planner = DummyPlannerAgent()
+    requirements_agent = RequirementsInterpreterAgent()
 
     config = OrchestratorConfig()
-    orchestrator = Orchestrator(planner=planner, tools=tools, config=config)
+    orchestrator = Orchestrator(planner, tools, config)
 
-    result = orchestrator.run(user_request)
-    print("\n=== Orchestrator Output ===\n")
-    print(result)
-    print("\n===========================\n")
+    # 1) Planner + optional LLM refinement via orchestrator
+    orchestrator_output = orchestrator.run(user_request)
+
+    # 2) Requirements interpretation as a separate agent step
+    requirements_output = requirements_agent.run(
+        user_request=user_request,
+        tools=tools,
+        io=None,
+        planner_plan=orchestrator_output,
+    )
+
+    print("\n=== Orchestrator Output (Plan / Refined Plan) ===\n")
+    print(orchestrator_output)
+    print("\n===============================================\n")
+
+    print("=== Requirements Interpreter Output ===\n")
+    print(requirements_output)
+    print("\n=====================================\n")
 
     # --- LLM usage report (satisfies assignment requirement) ---
     summary = usage_tracker.summary()
