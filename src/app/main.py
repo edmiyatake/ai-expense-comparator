@@ -10,6 +10,7 @@ from typing import Tuple
 
 from agents.dummy_planner import DummyPlannerAgent
 from agents.requirements_interpreter import RequirementsInterpreterAgent
+from agents.code_generator import CodeGeneratorAgent
 from mcp.orchestrator import Orchestrator, OrchestratorConfig
 from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
@@ -72,6 +73,7 @@ def main(argv: list[str] | None = None) -> None:
     tools, usage_tracker = build_tool_registry()
     planner = DummyPlannerAgent()
     requirements_agent = RequirementsInterpreterAgent()
+    codegen_agent = CodeGeneratorAgent()
 
     config = OrchestratorConfig()
     orchestrator = Orchestrator(planner, tools, config)
@@ -79,12 +81,21 @@ def main(argv: list[str] | None = None) -> None:
     # 1) Planner + optional LLM refinement via orchestrator
     orchestrator_output = orchestrator.run(user_request)
 
-    # 2) Requirements interpretation as a separate agent step
+    # 2) Requirements interpretation
     requirements_output = requirements_agent.run(
         user_request=user_request,
         tools=tools,
         io=None,
         planner_plan=orchestrator_output,
+    )
+
+    # 3) Code generation skeleton
+    codegen_output = codegen_agent.run(
+        user_request=user_request,
+        tools=tools,
+        io=None,
+        planner_plan=orchestrator_output,
+        requirements_text=requirements_output,
     )
 
     print("\n=== Orchestrator Output (Plan / Refined Plan) ===\n")
@@ -94,6 +105,10 @@ def main(argv: list[str] | None = None) -> None:
     print("=== Requirements Interpreter Output ===\n")
     print(requirements_output)
     print("\n=====================================\n")
+
+    print("=== Code Generator Output (Code Skeleton) ===\n")
+    print(codegen_output)
+    print("\n===========================================\n")
 
     # --- LLM usage report (satisfies assignment requirement) ---
     summary = usage_tracker.summary()
