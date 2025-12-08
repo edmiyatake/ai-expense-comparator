@@ -11,6 +11,7 @@ from agents.dummy_planner import DummyPlannerAgent
 from mcp.orchestrator import Orchestrator, OrchestratorConfig
 from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
+from mcp.tools.usage_tracker import UsageTracker
 
 
 def configure_logging() -> None:
@@ -20,21 +21,25 @@ def configure_logging() -> None:
     )
 
 
-def build_tool_registry() -> ToolRegistry:
+def build_tool_registry() -> tuple[ToolRegistry, UsageTracker]:
+    """
+    Create the ToolRegistry and attach a UsageTracker to the LLM tool.
+
+    Returns (registry, tracker) so callers can later report usage.
+    """
     registry = ToolRegistry()
+    usage_tracker = UsageTracker()
 
     # Register the LLM tool if an API key seems to be available.
     if os.getenv("OPENAI_API_KEY"):
-        registry.register(LLMTool())
+        registry.register(LLMTool(tracker=usage_tracker))
     else:
-        # It is not an error to run without the LLM; the orchestrator will
-        # simply fall back to the raw planner output.
         logging.getLogger(__name__).warning(
             "OPENAI_API_KEY not set. LLMTool will not be registered; "
             "results will not be refined by an LLM."
         )
 
-    return registry
+    return registry, usage_tracker
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -56,14 +61,13 @@ def main(argv: list[str] | None = None) -> None:
     if args.request:
         user_request = args.request
     else:
-        # Interactive prompt fallback
         print(
             "Enter a natural-language description of the application you want "
             "the AI Expense Comparator to design:"
         )
         user_request = input("> ").strip()
 
-    tools = build_tool_registry()
+    tools, usage_tracker = build_tool_registry()
     planner = DummyPlannerAgent()
 
     config = OrchestratorConfig()
@@ -73,6 +77,13 @@ def main(argv: list[str] | None = None) -> None:
     print("\n=== Orchestrator Output ===\n")
     print(result)
     print("\n===========================\n")
+
+    # --- LLM usage report (satisfies assignment requirement) ---
+    summary = usage_tracker.summary()
+    print("=== LLM Usage ===")
+    print(f"API calls:     {summary.call_count}")
+    print(f"Total tokens:  {summary.total_tokens}")
+    print("=================")
 
 
 if __name__ == "__main__":

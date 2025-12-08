@@ -1,39 +1,51 @@
 # src/mcp/tools/usage_tracker.py
+
 from __future__ import annotations
-from typing import Any, Dict
-from .base import UsageTrackerTool
+
+from dataclasses import dataclass
 
 
-class InMemoryUsageTracker(UsageTrackerTool):
+@dataclass
+class LLMUsageSummary:
+    """Aggregated usage information for the LLM."""
+    call_count: int
+    total_tokens: int
+
+
+class UsageTracker:
+    """
+    Tracks LLM usage across a single run of the application.
+
+    It records:
+      - number of API calls
+      - total tokens used (prompt + completion)
+    """
+
     def __init__(self) -> None:
-        self.total_calls = 0
-        self.total_tokens_prompt = 0
-        self.total_tokens_completion = 0
-        self.per_agent: Dict[str, Dict[str, int]] = {}
+        self._call_count: int = 0
+        self._total_tokens: int = 0
 
-    def record_call(
-        self,
-        *,
-        agent_name: str,
-        prompt_tokens: int,
-        completion_tokens: int,
-    ) -> None:
-        self.total_calls += 1
-        self.total_tokens_prompt += prompt_tokens
-        self.total_tokens_completion += completion_tokens
+    def record_call(self, total_tokens: int | None) -> None:
+        """
+        Record a single LLM API call.
 
-        agent_stats = self.per_agent.setdefault(
-            agent_name,
-            {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0},
+        total_tokens may be None if the API did not return usage stats
+        (in that case we only increment the call count).
+        """
+        self._call_count += 1
+        if total_tokens is not None:
+            self._total_tokens += total_tokens
+
+    @property
+    def call_count(self) -> int:
+        return self._call_count
+
+    @property
+    def total_tokens(self) -> int:
+        return self._total_tokens
+
+    def summary(self) -> LLMUsageSummary:
+        return LLMUsageSummary(
+            call_count=self._call_count,
+            total_tokens=self._total_tokens,
         )
-        agent_stats["calls"] += 1
-        agent_stats["prompt_tokens"] += prompt_tokens
-        agent_stats["completion_tokens"] += completion_tokens
-
-    def get_stats(self) -> Dict[str, Any]:
-        return {
-            "total_calls": self.total_calls,
-            "total_tokens_prompt": self.total_tokens_prompt,
-            "total_tokens_completion": self.total_tokens_completion,
-            "per_agent": self.per_agent,
-        }

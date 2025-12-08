@@ -100,7 +100,6 @@ class ToolRegistry:
 
     def invoke(
         self,
- theValue to str
         name: str,
         arguments: Dict[str, Any],
         context: Optional[ToolContext] = None,
