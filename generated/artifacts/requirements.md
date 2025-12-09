@@ -1,44 +1,89 @@
-# Functional Requirements
+## 1. Functional Requirements
 
-1. The system SHALL allow users to manually enter individual expenses, including date, description, amount, category, and account.
-2. The system SHALL allow users to upload one or more CSV files containing expenses exported from banks or financial institutions.
-3. The system SHALL parse uploaded CSV files and map columns into the internal expense model (date, description, amount, category, account).
-4. The system SHALL allow users to define and edit expense categories (e.g., groceries, transportation, entertainment).
-5. The system SHALL support assigning each expense to exactly one primary category.
-6. The system SHALL allow users to select one or more time periods (e.g., specific months, custom date ranges) for comparison.
-7. The system SHALL compute total spending per category for each selected time period.
-8. The system SHALL compute differences in spending per category between time periods (absolute and percentage change where applicable).
-9. The system SHALL provide a summary of overall spending trends across time periods (e.g., total increase/decrease, top increasing categories).
-10. The system SHALL provide textual summaries describing key insights (e.g., “Spending on groceries increased by 20% compared to last month.”).
-11. The system SHALL provide a way to export or copy comparison results (e.g., as text or CSV) for external use.
+1.1 The system shall allow users to manually enter individual expenses via a user interface or command-line tool.
 
-# Non-Functional Requirements
+1.2 The system shall support uploading expense data in CSV format exported from multiple banks.
 
-1. The system SHOULD produce comparison results for typical datasets (up to tens of thousands of expenses) within a few seconds on a standard laptop.
-2. The system SHOULD produce deterministic results for the same input data and configuration.
-3. The system SHALL validate input data and report errors (e.g., invalid dates, missing amounts) in a clear, actionable way.
-4. The system SHOULD be structured so that storage (in-memory vs database) can be swapped via a well-defined interface.
-5. The system SHOULD be testable via automated unit tests for core comparison and aggregation logic.
+1.3 The system shall parse and import various bank-specific CSV formats, mapping their contents to a unified internal transaction schema.
 
-# Data & Integration Requirements
+1.4 The system shall allow expenses to be categorized, supporting standard categories such as groceries, transportation, and entertainment.
 
-1. The expense model SHALL, at minimum, support: id, date, description, amount, category, and account.
-2. The system SHALL treat amounts as decimal-safe numeric types (not floating-point) to avoid rounding errors.
-3. The system SHOULD support configurable CSV mappings, so different banks with different column names can be handled without code changes.
-4. The system SHOULD separate raw imported categories from normalized categories used for comparison.
-5. The system SHOULD allow default categories and mapping rules to be defined in configuration.
+1.5 The system shall normalize transaction categories from raw bank data to the application's standard set, with support for user overrides.
 
-# Visualization & Reporting Requirements
+1.6 The system shall detect and group recurring transactions based on similarity of amount, description, and transaction frequency.
 
-1. The system SHALL produce chart-ready data structures (e.g., JSON suitable for bar/line charts) representing spending per category over time.
-2. The system SHOULD support at least one comparison-friendly visualization format (e.g., bar chart comparing category spend for two periods).
-3. The system SHALL provide textual summaries alongside any chart-friendly outputs so users can understand trends without viewing charts.
-4. The system SHOULD highlight top increasing and decreasing categories in the summary (e.g., top 3 increases, top 3 decreases).
+1.7 The system shall allow users to view, edit, or override transaction categorizations and recurring groups.
 
-# Out-of-Scope and Assumptions
+1.8 The system shall generate expense comparison reports across user-selected time periods and custom date ranges.
 
-1. Real-time bank API integrations (e.g., direct connections to financial institutions) are OUT OF SCOPE for the initial version; the system assumes CSV uploads or manual input.
-2. Multi-currency conversion and foreign exchange rate handling are OUT OF SCOPE; the system assumes a single currency per dataset.
-3. User authentication, multi-user account management, and persistence of user profiles are OUT OF SCOPE for the initial CLI/desktop-focused implementation.
-4. The system assumes that the user has already cleaned obviously corrupted CSV files (e.g., non-tabular content) before upload.
-5. Advanced budgeting features (e.g., goals, alerts, or recommendations) are OUT OF SCOPE for the initial version; the focus is on comparison and insight into existing spending patterns.
+1.9 The system shall provide text-based summaries and insights highlighting trends, changes, or anomalies in user spending.
+
+1.10 The system shall enable users to identify potential areas of improvement in their spending habits via automated suggestions.
+
+1.11 The system shall store imported raw CSV files for future reference and traceability.
+
+1.12 The system shall deduplicate imported transactions to prevent double-counting from multiple CSV uploads.
+
+1.13 The system shall allow users to access transaction, recurring group, and comparison report data via a REST API and/or CLI.
+
+## 2. Non-Functional Requirements
+
+2.1 The system shall handle CSV imports containing malformed or missing data gracefully, reporting errors where necessary.
+
+2.2 The system shall complete the import, normalization, recurring detection, and reporting workflow for a typical bank CSV of up to 10,000 transactions within 2 minutes.
+
+2.3 The system shall be able to support at least 1,000 users with independent data, without performance degradation.
+
+2.4 The system shall store all user and transaction data securely and in compliance with relevant data protection policies.
+
+2.5 The system shall allow for testability of all core components via automated unit and integration tests.
+
+2.6 The system's workflow components (import, normalization, recurring, compare, report) shall be individually executable and orchestratable.
+
+2.7 The system shall provide clear and actionable error messages for user-facing actions (imports, categorization, recurring grouping).
+
+## 3. Data & Integration Requirements
+
+3.1 The system shall support persistent storage of all imported transactions, normalized transaction data, recurring expense groupings, and reports.
+
+3.2 The system shall maintain an auditable archive of each raw imported CSV, linked to the user and bank of origin.
+
+3.3 The system shall persist and manage category normalization mappings, with support for both default and user-customized mappings.
+
+3.4 The system shall persist recurring expense groups, including metadata such as average amount, frequency, member transactions, and involved banks.
+
+3.5 The system shall support integration with a relational database (such as SQLite or PostgreSQL) for structured data storage.
+
+3.6 The system shall provide REST API endpoints and/or CLI commands for importing transactions, retrieving normalized transactions, listing recurring groups, and fetching comparison reports.
+
+3.7 The system shall uniquely identify transactions using a combination of bank, account, and transaction IDs to support deduplication.
+
+## 4. Visualization & Reporting Requirements
+
+4.1 The system shall generate comparison reports summarizing expenses by category, time period, and bank.
+
+4.2 The system shall provide visualizations (charts/graphs) showing expense trends and breakdowns by category, bank, and period.
+
+4.3 The system shall display recurring expenses in reports, including details per group and their impact on overall spending.
+
+4.4 The system shall highlight and explain key differences or anomalies in expenses between selected periods or banks.
+
+4.5 The system shall present actionable text summaries suggesting ways to improve financial well-being based on analyzed data.
+
+4.6 The system shall allow users to filter and compare reported expenses across arbitrary custom date ranges.
+
+## 5. Out-of-Scope and Assumptions
+
+5.1 The system will not provide real-time bank integration (i.e., only CSV uploads are supported).
+
+5.2 The system will not automate bank login or credential management.
+
+5.3 The system does not provide tax preparation or investment-specific reporting features.
+
+5.4 The system assumes users provide accurate and complete CSV exports from their banks.
+
+5.5 The system assumes manual expenses entered by users follow the required data schema.
+
+5.6 The system will not perform currency conversion for transactions in different currencies.
+
+5.7 The system does not include mobile or desktop GUI applications beyond CLI and optional REST API.
