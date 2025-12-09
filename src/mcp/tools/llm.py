@@ -76,8 +76,7 @@ class LLMTool(Tool):
         system_prompt = arguments.get("system_prompt")
 
         if not isinstance(prompt, str) or not prompt.strip():
-            # Still count it as a "call" if you want; here we don't, since
-            # no API request is made. Requirement only cares about API calls.
+            # No API request -> no usage to record
             return ToolResult(
                 name=self.name,
                 success=False,
@@ -90,7 +89,12 @@ class LLMTool(Tool):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        response = None
+        # Figure out who is calling this tool (which agent)
+        caller_agent: Optional[str] = None
+        if context is not None:
+            # ToolContext should have caller: Optional[str]
+            caller_agent = getattr(context, "caller", None)
+
         try:
             response = self._client.chat.completions.create(
                 model=self._model,
@@ -99,10 +103,13 @@ class LLMTool(Tool):
 
             content = response.choices[0].message.content
 
-            # Record usage: 1 call, N total tokens (if available)
+            # Record usage: 1 call, N total tokens (if available), tagged by agent
             if self._tracker is not None:
                 total_tokens = self._extract_total_tokens(response)
-                self._tracker.record_call(total_tokens)
+                self._tracker.record_call(
+                    total_tokens=total_tokens,
+                    agent=caller_agent,
+                )
 
             return ToolResult(
                 name=self.name,
@@ -115,7 +122,10 @@ class LLMTool(Tool):
             # Even if the API call failed, we still count it as a call;
             # token usage is unknown in that case.
             if self._tracker is not None:
-                self._tracker.record_call(None)
+                self._tracker.record_call(
+                    total_tokens=None,
+                    agent=caller_agent,
+                )
 
             return ToolResult(
                 name=self.name,

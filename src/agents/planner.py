@@ -60,7 +60,7 @@ class PlannerAgent(Agent):
             "can implement them later."
         )
 
-        ctx = ToolContext(run_id="planner-initial")
+        ctx = ToolContext(run_id="planner-initial", caller="planner")
 
         result: ToolResult = tools.invoke(
             self._llm_tool_name,

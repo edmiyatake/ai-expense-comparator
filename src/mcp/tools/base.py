@@ -16,6 +16,7 @@ class ToolContext:
     shared state later (e.g. logger, config, run id, etc.).
     """
     run_id: Optional[str] = None
+    caller: Optional[str] = None
 
 
 @dataclass
