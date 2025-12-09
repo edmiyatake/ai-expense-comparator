@@ -9,7 +9,7 @@ import sys
 from typing import Tuple
 from dotenv import load_dotenv
 
-from agents.dummy_planner import DummyPlannerAgent
+from agents.planner import PlannerAgent
 from agents.requirements_interpreter import RequirementsInterpreterAgent
 from agents.code_generator import CodeGeneratorAgent
 from agents.test_generator import TestGeneratorAgent
@@ -17,6 +17,7 @@ from agents.reviewer import ReviewerAgent
 from mcp.orchestrator import Orchestrator, OrchestratorConfig
 from mcp.tools.base import ToolRegistry
 from mcp.tools.llm import LLMTool
+from mcp.tools.file import FileTool
 from mcp.tools.usage_tracker import UsageTracker
 
 
@@ -38,6 +39,9 @@ def build_tool_registry() -> Tuple[ToolRegistry, UsageTracker]:
     registry = ToolRegistry()
     usage_tracker = UsageTracker()
 
+    # File tool is always available; it does not depend on API keys.
+    registry.register(FileTool())
+
     # Register the LLM tool if an API key seems to be available.
     if os.getenv("OPENAI_API_KEY"):
         registry.register(LLMTool(tracker=usage_tracker))
@@ -48,6 +52,7 @@ def build_tool_registry() -> Tuple[ToolRegistry, UsageTracker]:
         )
 
     return registry, usage_tracker
+
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -76,7 +81,7 @@ def main(argv: list[str] | None = None) -> None:
         user_request = input("> ").strip()
 
     tools, usage_tracker = build_tool_registry()
-    planner = DummyPlannerAgent()
+    planner = PlannerAgent(llm_tool_name="llm_chat")
     requirements_agent = RequirementsInterpreterAgent()
     codegen_agent = CodeGeneratorAgent()
     testgen_agent = TestGeneratorAgent()
