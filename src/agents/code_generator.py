@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Optional
 
 from agents.base import Agent, OrchestratorIO
-from mcp.tools.base import ToolRegistry, ToolContext  # <-- import ToolContext
+from mcp.tools.base import ToolRegistry, ToolContext
 
 
 class CodeGeneratorAgent(Agent):
@@ -87,26 +87,58 @@ class CodeGeneratorAgent(Agent):
     ) -> str:
         """
         Build the prompt for generating a runnable Python app module (app/app.py).
+
+        This version expects the generated module to:
+        - Act as a thin CLI wrapper.
+        - Forward the prompt into the existing `mcp.orchestrator` CLI via subprocess.
         """
         parts: list[str] = []
 
         parts.append(
             dedent(
                 """
-                You are generating a minimal but runnable Python application module
-                for the AI Expense Comparator.
+                You are generating a minimal but runnable Python CLI module
+                for the AI Expense Comparator demo.
 
-                The module should:
-                - Expose a `main()` function.
-                - Parse command-line arguments for an optional prompt string.
-                - Call into the AI Expense Comparator orchestration pipeline
-                  (assume it will be wired later; for now you may stub it).
-                - Print simple status messages to stdout.
+                The purpose of this module is to take a natural-language prompt
+                from the command line and forward it into the existing AI
+                Expense Comparator pipeline, which is exposed via the
+                `python -m mcp.orchestrator` entrypoint.
 
-                IMPORTANT:
-                - Return only **valid Python code**.
+                Requirements for the generated module:
+
+                - Return only **valid Python 3 code**.
                 - Do **not** wrap the code in Markdown fences.
-                - Do **not** include commentary or explanations.
+                - Do **not** include commentary or prose outside of comments.
+
+                Functional requirements:
+
+                - Import `argparse`, `sys`, and `subprocess`.
+                - Define a function `run_expense_comparator(prompt: str | None = None) -> int` that:
+                  - Builds a command list like `[sys.executable, "-m", "mcp.orchestrator"]`.
+                  - If `prompt` is not None, append `"--prompt"` and the prompt string to the command.
+                  - Prints a few clear status messages to stdout (starting, delegating to orchestrator, done).
+                  - Uses `subprocess.run` (or `subprocess.call`) to invoke the command.
+                  - Returns the subprocess return code (or 0 on success).
+
+                - Define a `main(argv: list[str] | None = None) -> int` that:
+                  - Uses `argparse.ArgumentParser` with a description such as "AI Expense Comparator CLI".
+                  - Adds an optional `--prompt` argument (string).
+                  - If `--prompt` is not provided, use a default like
+                    "Build an Expense Comparator application.".
+                  - Calls `run_expense_comparator(prompt)` and returns its exit code.
+
+                - Include the standard CLI guard at the bottom:
+
+                    if __name__ == "__main__":
+                        raise SystemExit(main())
+
+                The module does not need to directly import or construct agents,
+                tools, or orchestrator objects. Delegation to `python -m mcp.orchestrator`
+                is sufficient; the orchestrator module is responsible for running
+                the full multi-agent pipeline.
+
+                Keep the code clear and minimal, but fully runnable.
                 """
             ).strip()
         )
@@ -163,33 +195,49 @@ class CodeGeneratorAgent(Agent):
     def _fallback_app_module(self) -> str:
         """
         Simple deterministic app/app.py module used when no LLM is available.
+
+        This version shells out to `python -m mcp.orchestrator` so that the
+        existing pipeline is reused.
         """
         return dedent(
             """
             \"\"\"Fallback Expense Comparator CLI application.
 
-            This module is intentionally simple. In a real deployment, the main()
-            function would call into the orchestrator to run the full AI pipeline.
+            This module is intentionally simple. It forwards the prompt to the
+            existing `mcp.orchestrator` module, which is responsible for running
+            the full AI Expense Comparator pipeline.
             \"\"\"
+
 
             from __future__ import annotations
 
             import argparse
+            import subprocess
             import sys
+            from typing import List, Optional
 
 
-            def run_pipeline(prompt: str) -> None:
-                \"\"\"Placeholder for the real orchestration pipeline.
+            def run_expense_comparator(prompt: Optional[str] = None) -> int:
+                \"\"\"Run the AI Expense Comparator pipeline via mcp.orchestrator.
 
-                For now we just echo the prompt so the generated app is runnable.
+                This function builds a `python -m mcp.orchestrator` command and
+                optionally passes through a `--prompt` argument.
                 \"\"\"
-                print("Running AI Expense Comparator pipeline...")
-                print(f"User prompt: {prompt}")
+                cmd: List[str] = [sys.executable, "-m", "mcp.orchestrator"]
+
+                if prompt:
+                    cmd.extend(["--prompt", prompt])
+
+                print("Starting AI Expense Comparator via mcp.orchestrator...")
+                print(f"Using command: {' '.join(cmd)}")
+                result = subprocess.run(cmd)
+                print(f"AI Expense Comparator finished with exit code {result.returncode}.")
+                return int(result.returncode)
 
 
-            def main(argv: list[str] | None = None) -> int:
+            def main(argv: Optional[List[str]] = None) -> int:
                 parser = argparse.ArgumentParser(
-                    description="AI Expense Comparator (fallback CLI)"
+                    description="AI Expense Comparator CLI (fallback wrapper)"
                 )
                 parser.add_argument(
                     "--prompt",
@@ -199,8 +247,7 @@ class CodeGeneratorAgent(Agent):
                 )
 
                 args = parser.parse_args(argv)
-                run_pipeline(args.prompt)
-                return 0
+                return run_expense_comparator(prompt=args.prompt)
 
 
             if __name__ == "__main__":
