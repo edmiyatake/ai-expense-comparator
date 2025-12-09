@@ -153,10 +153,14 @@ def main(argv: list[str] | None = None) -> None:
 
     # --- LLM usage report (satisfies assignment requirement) ---
     summary = usage_tracker.summary()
+
     print("=== LLM Usage ===")
-    print(f"API calls:     {summary.call_count}")
-    print(f"Total tokens:  {summary.total_tokens}")
-    print("=================")
+    print(f"Total API calls: {summary.call_count}")
+    print(f"Total tokens:    {summary.total_tokens}")
+
+    print("\n--- Usage by Agent ---")
+    for agent, stats in summary.per_agent.items():
+        print(f"{agent}: {stats.call_count} calls, {stats.total_tokens} tokens")
 
 
 if __name__ == "__main__":

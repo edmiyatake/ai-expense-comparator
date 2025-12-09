@@ -15,9 +15,7 @@ class AgentUsageSummary:
 
 @dataclass
 class LLMUsageSummary:
-    """
-    Aggregated usage information for the LLM, including per-agent breakdown.
-    """
+    """Aggregated LLM usage information, including per-agent breakdown."""
     call_count: int
     total_tokens: int
     per_agent: Dict[str, AgentUsageSummary]
@@ -27,8 +25,8 @@ class UsageTracker:
     """
     Tracks LLM usage across a single run of the application.
 
-    It records:
-      - total number of API calls
+    Records:
+      - total API calls
       - total tokens used (prompt + completion)
       - per-agent call count and token usage
     """
@@ -44,28 +42,29 @@ class UsageTracker:
         agent: str | None = None,
     ) -> None:
         """
-        Record a single LLM API call.
+        Record an LLM API call.
 
-        total_tokens may be None if the API did not return usage stats
-        (in that case we only increment the call count).
-
-        agent is the logical caller (e.g. 'planner', 'requirements_interpreter').
+        total_tokens may be None if the API response lacks usage info.
+        agent is the logical caller (e.g., 'planner', 'code_generator').
         """
         self._call_count += 1
 
+        # Update global token counter
         if total_tokens is not None:
             self._total_tokens += total_tokens
 
-            if agent is not None:
-                # Initialize per-agent summary if needed
-                if agent not in self._per_agent:
-                    self._per_agent[agent] = AgentUsageSummary(
-                        call_count=0,
-                        total_tokens=0,
-                    )
-                # Update that agent's stats
-                agent_summary = self._per_agent[agent]
-                agent_summary.call_count += 1
+        # Update per-agent stats
+        if agent is not None:
+            if agent not in self._per_agent:
+                self._per_agent[agent] = AgentUsageSummary(
+                    call_count=0,
+                    total_tokens=0,
+                )
+
+            agent_summary = self._per_agent[agent]
+            agent_summary.call_count += 1
+
+            if total_tokens is not None:
                 agent_summary.total_tokens += total_tokens
 
     @property
@@ -78,11 +77,13 @@ class UsageTracker:
 
     @property
     def per_agent(self) -> Dict[str, AgentUsageSummary]:
-        return self._per_agent
+        # Return a shallow copy to prevent outside mutation
+        return dict(self._per_agent)
 
     def summary(self) -> LLMUsageSummary:
+        """Return aggregated usage info for reporting."""
         return LLMUsageSummary(
             call_count=self._call_count,
             total_tokens=self._total_tokens,
-            per_agent=dict(self._per_agent),
+            per_agent=self.per_agent,  # already a safe copy
         )
