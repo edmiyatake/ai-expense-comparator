@@ -1,85 +1,51 @@
-so ideally the project should have:
+# The Perfect Prompt
+## Original Software Description
+Expense Comparator is a finance software application that helps users compare their expenses across different time periods. Users can input their expenses and categorize them into different categories such as groceries, transportation, entertainment, etc. The application will provide a visual representation of their expenses through charts and graphs, allowing users to easily compare their spending habits between different timeframes. Users can also set custom date ranges for comparison. The main function of the software is to provide users with a clear understanding of their spending patterns and identify areas where they can make adjustments to improve their financial well-being.
 
-Build an Expense Comparator application with the following capabilities:
+We want to separate these into separate constraints
+## Constraints 
+### Core Functional Requirements
 
-Expense Input
+- The system must allow users to manually enter expenses.
+- Users must be able to import expenses from CSV files.
+- Each expense must include:
+  - date
+  - description
+  - amount 
+  - category 
+  - account
+- Users must be able to create, edit, delete, and map categories.
+- The system must store expenses, categories, recurring patterns, and import logs.
 
-Users must be able to manually enter expenses.
+### Comparison + Analysis Requirements
 
-Users may optionally upload CSV exports from banks.
+- The system must compare spending across different time periods.
+- Users must be able to choose preset and custom date ranges.
+- The application must detect recurring expenses (e.g., subscriptions).
+- The system must highlight spending patterns, anomalies, and trends.
+- Insights must help users identify areas to improve their financial well-being.
 
-Each expense includes: date, description, amount, category, and account/source.
+### Visualization Requirements
 
-Categorization
+- The system must produce clear visual representations of spending.
+- Required chart types include:
+  - category breakdown charts
+  - time-series trend charts
+  - comparison charts between date ranges
+- Visual outputs must make spending comparisons intuitive and meaningful.
 
-Users can assign categories (e.g., groceries, transportation, entertainment).
+### Interface Requirements
 
-The system must support editing categories, adding new categories, and mapping raw categories from CSVs.
+- The system may be CLI-based or API-based.
+- It must support:
+  - entering expenses 
+  - selecting time periods 
+  - viewing comparisons 
+  - displaying visual reports
 
-Automatic category suggestions are a bonus.
+## Converting Constraints to Prompt
+The list of constraints serves as the foundation for the final prompt by transforming the original narrative description into precise, actionable requirements that the multi-agent system can reliably interpret. By breaking the software description into explicit functional, analytical, visualization, and interface constraints, we remove ambiguity and ensure that every essential capability is represented in the generated solution. The final prompt is simply a compressed version of these constraints, written in a way that is short enough for a terminal environment but detailed enough to guarantee that the agents produce complete requirements, a domain model, architecture, code skeleton, test skeleton, and design review. In other words, the constraints define what the system must do, and the final prompt distills them into a clear instruction so the agents can generate the full Expense Comparator application without missing any critical features.
 
-Time-Based Comparison
-
-Users can compare their spending across different time periods (e.g., this month vs last month).
-
-Users can set custom date ranges.
-
-The system must support comparing totals, averages, and category-level breakdowns.
-
-Recurring Transaction Detection
-
-Identify recurring expenses (subscriptions, memberships, bills).
-
-Show frequency, amount stability, and next expected charge.
-
-Data Visualization
-
-Provide charts and graphs that visually summarize spending patterns.
-
-Examples: bar charts, line charts, category pie charts.
-
-Visuals should support time range comparison and category breakdowns.
-
-Insights for Financial Well-Being
-
-Highlight categories with spending increases or decreases.
-
-Identify unusual spikes in spending.
-
-Suggest categories where users may consider reducing expenses.
-
-Provide short insights explaining trends.
-
-Data Management
-
-Store expenses, categories, recurring transactions, and user actions.
-
-Log CSV imports and errors.
-
-User Interface
-
-The final application may be CLI or API-based.
-
-The interface must allow:
-
-entering expenses,
-
-selecting time ranges,
-
-viewing charts and reports.
-
-The system you generate should include:
-
-A clear domain model (entities, relationships, constraints)
-
-A file/module-level architecture
-
-Code skeletons for each module
-
-Test skeletons covering import, normalization, categorization, visualization, comparison, insights, and CLI/API workflows
-
-A reviewer analysis identifying strengths, gaps, and risks
-
-We can condense this and change it to a paragraph format so it's easier for the llm
+## The Prompt
 
 Build an Expense Comparator application that lets users manually enter expenses and optionally upload CSVs. Each expense includes a date, description, amount, category, and account. Users can create, edit, and map categories. The system must compare spending across different time periods, including custom date ranges, and detect recurring expenses such as subscriptions. It must also produce clear visual representations of spending using charts or graphs, including category breakdown charts, time-series trend charts, and comparison charts between selected date ranges. Additionally, the application should generate insights that highlight spending trends, anomalies, and areas to improve financial well-being. The system should store expenses, categories, recurring patterns, and import logs. The UI may be CLI or API based but must support entering expenses, selecting date ranges, viewing comparisons, and displaying visual reports. Please generate requirements, a domain model, architecture, a full code skeleton, a test skeleton, and a design review covering all these capabilities.
