@@ -1,4 +1,4 @@
-# src/mcp/tools/__init__.py  (or wherever you centralize this)
+# src/mcp/tools/__init__.py
 
 from pathlib import Path
 

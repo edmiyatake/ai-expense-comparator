@@ -1,10 +1,12 @@
+# src/agents/reviewer.py
+
 from __future__ import annotations
 
 from textwrap import dedent
 from typing import Optional
 
 from agents.base import Agent, OrchestratorIO
-from mcp.tools.base import ToolRegistry
+from mcp.tools.base import ToolRegistry, ToolContext  # <-- added ToolContext import
 
 
 class ReviewerAgent(Agent):
@@ -144,6 +146,12 @@ class ReviewerAgent(Agent):
                 test_skeleton=test_skeleton,
             )
 
+            # NEW: ToolContext tagging this call as coming from the reviewer agent
+            ctx = ToolContext(
+                run_id="reviewer-architectural-review",
+                caller=self.name,  # "reviewer"
+            )
+
             result = tools.invoke(
                 "llm_chat",
                 {
@@ -154,6 +162,7 @@ class ReviewerAgent(Agent):
                         "Return only the requested Markdown sections."
                     ),
                 },
+                context=ctx,  # <-- pass context so LLMTool sees caller
             )
 
             if result.success and isinstance(result.output, str):

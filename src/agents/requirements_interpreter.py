@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Optional
 
 from agents.base import Agent, OrchestratorIO
-from mcp.tools.base import ToolRegistry
+from mcp.tools.base import ToolRegistry, ToolContext  # <-- import ToolContext
 
 
 class RequirementsInterpreterAgent(Agent):
@@ -107,6 +107,12 @@ class RequirementsInterpreterAgent(Agent):
                 planner_plan=planner_plan,
             )
 
+            # NEW: tag this LLM call with ToolContext carrying the agent name
+            ctx = ToolContext(
+                run_id="requirements-interpreter",
+                caller=self.name,  # "requirements_interpreter"
+            )
+
             result = tools.invoke(
                 "llm_chat",
                 {
@@ -117,6 +123,7 @@ class RequirementsInterpreterAgent(Agent):
                         "with numbered, testable requirement statements."
                     ),
                 },
+                context=ctx,  # <-- pass context
             )
 
             if result.success and isinstance(result.output, str):

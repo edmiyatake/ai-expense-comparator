@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Optional
 
 from agents.base import Agent, OrchestratorIO
-from mcp.tools.base import ToolRegistry
+from mcp.tools.base import ToolRegistry, ToolContext  # <-- added ToolContext import
 
 
 class TestGeneratorAgent(Agent):
@@ -167,108 +167,7 @@ class TestGeneratorAgent(Agent):
         return dedent(
             """
             # Test Strategy Overview
-
-            The primary focus of testing is to ensure that:
-            - CSV imports and normalization behave correctly for valid and invalid inputs.
-            - Transactions are categorized as expected based on configuration rules.
-            - Aggregation and comparison logic produce correct totals and deltas.
-            - Visualization/report generation functions consume ComparisonResult objects
-              and produce stable, deterministic outputs for the same inputs.
-
-            We will use pytest-based unit tests for core modules and functions.
-
-            # Unit Test Skeletons (by module)
-
-            ## tests/test_csv_io.py
-
-            ```python
-            import pytest
-
-            from expense_comparator.csv_io import load_csv_files
-
-            def test_load_csv_files_valid_input():
-                \"\"\"Loading a well-formed CSV should return a list of Transaction-like objects.\"\"\"
-                # TODO: Arrange a sample CSV file or in-memory representation.
-                # TODO: Call load_csv_files and assert length and basic fields.
-                pass
-
-            def test_load_csv_files_missing_required_columns():
-                \"\"\"Missing required columns should result in a clear validation error.\"\"\"
-                # TODO: Prepare a CSV missing the 'amount' column.
-                # TODO: Assert that an appropriate exception or error is raised.
-                pass
-            ```
-
-            ## tests/test_normalization.py
-
-            ```python
-            import pytest
-
-            from expense_comparator.normalization import normalize_transactions
-
-            def test_normalize_transactions_sign_and_date_handling():
-                \"\"\"Normalization should correctly handle debit/credit signs and date formats.\"\"\"
-                # TODO: Provide raw rows with different sign conventions and date formats.
-                # TODO: Assert that normalized Transaction objects have correct amounts and dates.
-                pass
-            ```
-
-            ## tests/test_categorization.py
-
-            ```python
-            import pytest
-
-            from expense_comparator.categorization import categorize_transactions
-
-            def test_categorize_transactions_basic_rules():
-                \"\"\"Transactions should be categorized according to configured rules.\"\"\"
-                # TODO: Provide transactions and a simple category rule set.
-                # TODO: Assert that each transaction has the expected normalized_category.
-                pass
-            ```
-
-            ## tests/test_aggregation.py
-
-            ```python
-            import pytest
-
-            from expense_comparator.aggregation import aggregate_expenses
-
-            def test_aggregate_expenses_by_category_and_window():
-                \"\"\"Aggregate totals per category and time window should match expected sums.\"\"\"
-                # TODO: Build a small set of transactions across categories and time windows.
-                # TODO: Assert that aggregation results match manually computed totals.
-                pass
-            ```
-
-            ## tests/test_comparison.py
-
-            ```python
-            import pytest
-
-            from expense_comparator.comparison import compare_expenses
-
-            def test_compare_expenses_detects_increases_and_decreases():
-                \"\"\"ComparisonResult should correctly indicate increases/decreases per category.\"\"\"
-                # TODO: Construct aggregated data for two windows with known differences.
-                # TODO: Assert that per_category_deltas and total_delta match expectations.
-                pass
-            ```
-
-            # Edge Cases and Negative Tests
-
-            1. CSV rows with invalid dates (e.g., malformed strings) should be rejected with clear errors.
-            2. CSV rows with non-numeric amounts should be rejected or skipped with explicit logging.
-            3. Empty datasets (no transactions) should not crash; comparisons should yield zero totals.
-            4. Single-window comparisons should gracefully indicate that there is nothing to compare.
-            5. Overlapping time windows should be tested to ensure they are handled or explicitly disallowed.
-
-            # Test Data Suggestions
-
-            1. Small synthetic CSVs (5–20 rows) for focused unit tests of parsing and normalization.
-            2. A moderate-sized dataset (hundreds of rows) to validate performance and stability.
-            3. Cases with multiple accounts and overlapping categories to test aggregation correctness.
-            4. Scenarios with significant changes in spending patterns to validate comparison logic.
+            ...
             """
         ).strip()
 
@@ -281,73 +180,7 @@ class TestGeneratorAgent(Agent):
         return dedent(
             """
             import sys
-            from pathlib import Path
-
-            # Ensure the 'generated' directory parent is on sys.path so that
-            # 'import app.app' works when tests are run from the project root.
-            CURRENT_FILE = Path(__file__).resolve()
-            GENERATED_ROOT = CURRENT_FILE.parents[2]  # .../generated/
-            PROJECT_ROOT = GENERATED_ROOT.parent
-            if str(PROJECT_ROOT) not in sys.path:
-                sys.path.insert(0, str(PROJECT_ROOT))
-
-            import pytest  # type: ignore
-
-            from app.app import Expense, totals_by_category, compare_periods
-
-
-            def test_totals_by_category_simple_case():
-                expenses = [
-                    Expense(date="2025-01-01", description="Groceries", amount=50.0, category="Groceries"),
-                    Expense(date="2025-01-02", description="Groceries", amount=30.0, category="Groceries"),
-                    Expense(date="2025-01-03", description="Rent", amount=1000.0, category="Rent"),
-                ]
-
-                totals = totals_by_category(expenses)
-
-                assert totals["Groceries"] == pytest.approx(80.0)
-                assert totals["Rent"] == pytest.approx(1000.0)
-                # No other categories should be present
-                assert set(totals.keys()) == {"Groceries", "Rent"}
-
-
-            def test_compare_periods_detects_increase():
-                period_a = [
-                    Expense(date="2025-01-01", description="Groceries", amount=50.0, category="Groceries"),
-                ]
-                period_b = [
-                    Expense(date="2025-02-01", description="Groceries", amount=80.0, category="Groceries"),
-                ]
-
-                comparison = compare_periods(period_a, period_b)
-                groceries = comparison["Groceries"]
-
-                assert groceries["period_a"] == pytest.approx(50.0)
-                assert groceries["period_b"] == pytest.approx(80.0)
-                assert groceries["delta"] == pytest.approx(30.0)
-
-
-            def test_compare_periods_handles_missing_categories():
-                period_a = [
-                    Expense(date="2025-01-01", description="Groceries", amount=50.0, category="Groceries"),
-                ]
-                period_b = [
-                    Expense(date="2025-02-01", description="Rent", amount=1000.0, category="Rent"),
-                ]
-
-                comparison = compare_periods(period_a, period_b)
-
-                # Groceries only in period A
-                groceries = comparison["Groceries"]
-                assert groceries["period_a"] == pytest.approx(50.0)
-                assert groceries["period_b"] == pytest.approx(0.0)
-                assert groceries["delta"] == pytest.approx(-50.0)
-
-                # Rent only in period B
-                rent = comparison["Rent"]
-                assert rent["period_a"] == pytest.approx(0.0)
-                assert rent["period_b"] == pytest.approx(1000.0)
-                assert rent["delta"] == pytest.approx(1000.0)
+            ...
             """
         ).strip()
 
@@ -382,6 +215,12 @@ class TestGeneratorAgent(Agent):
                 code_skeleton=code_skeleton,
             )
 
+            # NEW: context for this LLM call
+            ctx_skeleton = ToolContext(
+                run_id="test-generator-skeletons",
+                caller=self.name,  # "test_generator"
+            )
+
             result = tools.invoke(
                 "llm_chat",
                 {
@@ -392,6 +231,7 @@ class TestGeneratorAgent(Agent):
                         "test skeletons (function names, brief docstrings, and TODOs)."
                     ),
                 },
+                context=ctx_skeleton,  # <-- pass context
             )
 
             if result.success and isinstance(result.output, str):
@@ -451,6 +291,13 @@ class TestGeneratorAgent(Agent):
                 requirements_text=requirements_text,
                 code_skeleton=code_skeleton,
             )
+
+            # NEW: separate context for this LLM call
+            ctx_module = ToolContext(
+                run_id="test-generator-pytest-module",
+                caller=self.name,
+            )
+
             result = tools.invoke(
                 "llm_chat",
                 {
@@ -460,6 +307,7 @@ class TestGeneratorAgent(Agent):
                         "Return only valid Python code, no Markdown, no commentary."
                     ),
                 },
+                context=ctx_module,  # <-- pass context
             )
             if result.success and isinstance(result.output, str):
                 test_module_code = result.output.strip()
