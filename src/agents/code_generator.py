@@ -297,7 +297,7 @@ class CodeGeneratorAgent(Agent):
                 io.log(f"[{self.name}] File tool not registered; skipping skeleton file write.")
 
         # ------------------------------------------------------------------
-        # New: generate executable Python app module under generated/app/
+        # generate executable Python app module under generated/app/
         # ------------------------------------------------------------------
         if io:
             io.log(f"[{self.name}] Starting app module generation.")
@@ -312,7 +312,7 @@ class CodeGeneratorAgent(Agent):
                 requirements_text=requirements_text,
             )
 
-            # NEW: separate context for this LLM call, same caller
+            # separate context for this LLM call, same caller
             ctx_app = ToolContext(
                 run_id="code-generator-app-module",
                 caller=self.name,
