@@ -1,59 +1,167 @@
-## Project Structure
+# Project Structure
 
 ```
 ai_expense_comparator/
-├── agents/
-│   ├── expense_agent.py
-│   ├── category_agent.py
-│   ├── import_agent.py
-│   ├── recurring_detector_agent.py
-│   ├── comparison_agent.py
-│   ├── visualization_agent.py
-│   └── insight_agent.py
-├── orchestrator.py
-├── domain/
-│   └── models.py
-├── storage/
-│   └── database.py
-├── api/
-│   └── cli.py
+├── app/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── migrations/
+│   │   │   └── ...
+│   ├── expenses/
+│   │   ├── __init__.py
+│   │   ├── manager.py
+│   │   ├── import_csv.py
+│   │   ├── recurring.py
+│   ├── categories/
+│   │   ├── __init__.py
+│   │   ├── manager.py
+│   │   ├── mapping.py
+│   ├── accounts/
+│   │   ├── __init__.py
+│   │   ├── manager.py
+│   ├── insights/
+│   │   ├── __init__.py
+│   │   ├── analysis.py
+│   ├── comparison/
+│   │   ├── __init__.py
+│   │   ├── engine.py
+│   ├── visualization/
+│   │   ├── __init__.py
+│   │   ├── charts.py
+│   │   ├── cli_ascii.py
+│   ├── imports/
+│   │   ├── __init__.py
+│   │   ├── logger.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── routes.py
+│   ├── cli/
+│   │   ├── __init__.py
+│   │   ├── interface.py
+│   ├── orchestrator.py
 ├── tests/
-│   ├── test_expense_agent.py
-│   ├── test_category_agent.py
-│   ├── test_import_agent.py
-│   ├── test_recurring_detector_agent.py
-│   ├── test_comparison_agent.py
-│   ├── test_visualization_agent.py
-│   ├── test_insight_agent.py
-│   └── test_end_to_end.py
-└── requirements.txt
+│   ├── __init__.py
+│   ├── test_expenses.py
+│   ├── test_categories.py
+│   ├── test_accounts.py
+│   ├── test_insights.py
+│   ├── test_comparison.py
+│   ├── test_visualization.py
+│   ├── test_imports.py
+│   ├── test_api.py
+│   ├── test_cli.py
+├── scripts/
+│   ├── run_api.py
+│   ├── run_cli.py
+│   ├── init_db.py
+├── requirements.txt
+├── README.md
+├── .env
+└── pyproject.toml
 ```
 
-### File-level Descriptions
+---
 
-- **agents/expense_agent.py** – Handles creation, update, deletion, validation, and retrieval of expense records.
-- **agents/category_agent.py** – Manages categories, including rule-based and manual mapping of expenses to categories.
-- **agents/import_agent.py** – Processes CSV imports, parses files, invokes expense creation, and logs import activities and errors.
-- **agents/recurring_detector_agent.py** – Detects and manages recurring expense patterns based on historical expense data.
-- **agents/comparison_agent.py** – Provides comparison and aggregation logic for expenses over selected date ranges or periods.
-- **agents/visualization_agent.py** – Generates visual reports (category breakdowns, time trends, comparisons) suitable for CLI/API output.
-- **agents/insight_agent.py** – Extracts insights, spending trends, anomalies, and recommendations from expense data.
+## File Descriptions
 
-- **orchestrator.py** – Central controller routing CLI/API commands and managing workflow across all agents with integrated error handling.
+### app/config.py  
+Application configuration settings, including database and feature flags.
 
-- **domain/models.py** – Defines data models/entities: Expense, Category, RecurringPattern, ImportLog (and optional User).
+### app/db/models.py  
+Defines ORM models for Expense, Category, Account, MappingRule, RecurringPattern, and ImportLog.
 
-- **storage/database.py** – Provides persistent storage access, ORM/database setup, and schema management for all domain entities.
+### app/db/migrations/  
+Database schema migration scripts.
 
-- **api/cli.py** – Command-line interface handling user interaction, parsing input, and invoking orchestrator actions.
+### app/expenses/manager.py  
+Handles CRUD operations and business logic for expenses.
 
-- **tests/test_expense_agent.py** – Unit tests for expense CRUD logic, validation, and edge cases.
-- **tests/test_category_agent.py** – Unit tests for category management and mapping logic.
-- **tests/test_import_agent.py** – Unit and integration tests for CSV import process and logging.
-- **tests/test_recurring_detector_agent.py** – Tests for recurring expense detection algorithms and pattern recognition.
-- **tests/test_comparison_agent.py** – Tests for period/range comparison and aggregation logic.
-- **tests/test_visualization_agent.py** – Tests for rendering and output of visualizations (charts, tables).
-- **tests/test_insight_agent.py** – Tests for insight generation, anomaly detection, and trend reporting.
-- **tests/test_end_to_end.py** – Integration and end-to-end scenario tests covering import, processing, reports, and insights.
+### app/expenses/import_csv.py  
+Parses and imports expenses from CSV files, applying mapping rules as needed.
 
-- **requirements.txt** – Lists required Python libraries for all components.
+### app/expenses/recurring.py  
+Detects and manages recurring expense patterns.
+
+### app/categories/manager.py  
+Manages category CRUD operations and category hierarchy.
+
+### app/categories/mapping.py  
+Implements category mapping rules and auto-categorization logic.
+
+### app/accounts/manager.py  
+Handles CRUD operations and logic for expense accounts.
+
+### app/insights/analysis.py  
+Generates spending insights, trend detection, anomaly discovery, and recommendations.
+
+### app/comparison/engine.py  
+Computes expense comparisons across different time periods and user-selected date ranges.
+
+### app/visualization/charts.py  
+Generates graphical charts (e.g., PNG, SVG) using visualization libraries.
+
+### app/visualization/cli_ascii.py  
+Renders text-based and ASCII-art charts for CLI output.
+
+### app/imports/logger.py  
+Logs import activities, errors, and summaries for reporting and audit.
+
+### app/api/routes.py  
+Implements RESTful API endpoints for all core functionality.
+
+### app/cli/interface.py  
+CLI entry point parsing commands, rendering outputs, and routing to core logic.
+
+### app/orchestrator.py  
+Coordinates module interactions, workflows, and session/context management.
+
+### tests/test_expenses.py  
+Unit and integration tests for expense CRUD, imports, and recurring logic.
+
+### tests/test_categories.py  
+Tests for category CRUD and mapping rule logic.
+
+### tests/test_accounts.py  
+Tests for account management operations.
+
+### tests/test_insights.py  
+Tests for insight generation and trend detection.
+
+### tests/test_comparison.py  
+Tests for period comparisons and statistics calculations.
+
+### tests/test_visualization.py  
+Tests for chart creation and CLI visual outputs.
+
+### tests/test_imports.py  
+Tests for import logging, error handling, and summaries.
+
+### tests/test_api.py  
+API endpoint tests covering all supported operations.
+
+### tests/test_cli.py  
+CLI command and output tests.
+
+### scripts/run_api.py  
+Script to launch REST API server.
+
+### scripts/run_cli.py  
+Script to start the interactive CLI application.
+
+### scripts/init_db.py  
+Database initialization and migration runner script.
+
+### requirements.txt  
+Specifies Python dependencies for the project.
+
+### README.md  
+Project overview and instructions for setting up and running the application.
+
+### .env  
+Environment variables for configuration.
+
+### pyproject.toml  
+Project metadata and build requirements.

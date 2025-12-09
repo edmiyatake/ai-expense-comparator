@@ -74,7 +74,7 @@ class Orchestrator:
             )
             return plan
 
-        ctx = ToolContext(run_id="initial-run")
+        ctx = ToolContext(run_id="initial-run", caller="Orchestrator")
 
         tool_result: ToolResult = self._tools.invoke(
             self._config.llm_tool_name,

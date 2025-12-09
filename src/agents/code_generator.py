@@ -238,7 +238,7 @@ class CodeGeneratorAgent(Agent):
                 requirements_text=requirements_text,
             )
 
-            # NEW: tag this LLM call with a ToolContext that includes caller
+            # this LLM call with a ToolContext that includes caller
             ctx = ToolContext(
                 run_id="code-generator-skeleton",
                 caller=self.name,  # "code_generator"

@@ -1,303 +1,242 @@
 # 1. Test Strategy Overview
 
-- **Unit Testing:**  
-  Isolate and test each agent's functionality, ensuring correctness of CRUD operations, data processing, validations, and logic (e.g., recurring detection, comparisons, insights, visualization).
-- **Edge/Negative Testing:**  
-  Ensure robustness against malformed data, invalid inputs, empty datasets, large volumes, duplicates, and non-standard scenarios.
-- **Mocking/Fakes:**  
-  Use mocked database connections and sample data entities to avoid I/O and enable deterministic assertions.
-- **Data-Driven Testing:**  
-  Tests will employ diverse sample data, including realistic and malformed inputs, to cover mapping, import, and reporting logic.
-- **Coverage Focus:**  
-  - Data validation (completeness, type checking, consistency)
-  - Error handling (import errors, mapping errors, etc.)
-  - Business rules (recurring detection, comparison logic, category mapping)
-  - Visualization output (formats, data summaries, edge chart cases)
-  - Logging/audit trail verification
+The testing approach for the Expense Comparator is modular and layered:
+
+- **Unit Tests**: Cover each agent/module in isolation by mocking dependencies. Focus on correctness, error handling, validation, and edge conditions at the function/class level.
+- **Integration Tests**: Assemble components to test real-world data flows, ensuring modules interact as expected (e.g., importing and categorizing expenses).
+- **CLI/API Tests**: Validate end-user operations through CLI commands and REST API endpoints, including input/output, error responses, and report generation.
+- **Performance & Scalability**: (Not detailed here) Stress major flows such as large imports and recurring detection.
+- **Test Data**: Mix representative, edge, and negative samples for validation and analytics use cases.
 
 # 2. Unit Test Skeletons (by module)
 
----
-
-## test_expense_agent.py
+## tests/test_expenses.py
 
 ```python
-def test_create_expense_valid():
-    """Test creating a valid expense entry."""
-    # TODO: Create and assert newly created expense.
+# Expense Manager
+def test_add_expense_valid():
+    """Adding a valid expense should store it with correct fields."""
+    # TODO: Create expense and check DB state
 
-def test_create_expense_missing_fields():
-    """Test creation fails with missing required fields."""
-    # TODO: Handle and check error on missing fields.
+def test_edit_expense_updates_fields():
+    """Editing an expense updates selected fields only."""
+    # TODO: Edit one field, verify before/after
 
-def test_update_expense_fields():
-    """Test updating fields of an existing expense."""
-    # TODO: Update, retrieve, and assert changed fields.
+def test_delete_expense_removes_record():
+    """Deleting an expense should remove it from storage."""
+    # TODO: Add + delete, assert missing
 
-def test_delete_expense():
-    """Test deleting an expense by ID."""
-    # TODO: Delete and confirm removal.
+def test_list_expenses_with_pagination():
+    """Listing expenses supports pagination and sorting."""
+    # TODO: Create many, fetch slices, check order
 
-def test_get_expense_by_id():
-    """Test retrieving an expense by its unique ID."""
-    # TODO: Retrieve and assert returned instance.
+# CSV Import
+def test_import_csv_valid():
+    """Importing a valid CSV maps all fields to expenses as expected."""
+    # TODO: Parse CSV, mock mapping, assert correct rows
 
-def test_expense_validation_type_errors():
-    """Test validation for incorrect data types in expense fields."""
-    # TODO: Assert type error/validation error raised.
+def test_import_csv_applies_category_mapping():
+    """Category mapping rules apply during CSV import."""
+    # TODO: Import with mapping rules, check categories assigned
 
-def test_list_expenses_filtered_by_category():
-    """Test expense listing filtered by category."""
-    # TODO: Retrieve expenses with a category filter.
+# Recurring
+def test_detect_recurring_expenses_identifies_patterns():
+    """RecurringDetector identifies matching recurring patterns."""
+    # TODO: Add recurring-like expenses, detect recurrence
 
-def test_list_expenses_date_range():
-    """Test listing expenses in a given date range."""
-    # TODO: Retrieve expenses within specified dates.
+def test_update_recurring_pattern_on_new_expense():
+    """Recurring patterns are updated as new recurring expenses appear."""
+    # TODO: Add more of a detected series, verify pattern updated
 ```
 
----
-
-## test_category_agent.py
+## tests/test_categories.py
 
 ```python
-def test_create_category():
-    """Test creation of a new category."""
-    # TODO: Create and assert new category.
+def test_add_category_creates_new():
+    """Adding a new category is reflected in storage."""
+    # TODO: Add and verify
 
-def test_edit_category_name_and_description():
-    """Test editing category name and description."""
-    # TODO: Update and assert changes.
+def test_edit_category_updates_name():
+    """Editing a category changes its name (and optionally its parent)."""
+    # TODO: Edit and verify
 
-def test_delete_category():
-    """Test deleting a category; ensure proper un-linking or fallback."""
-    # TODO: Delete and validate cascading/unmapping behavior.
+def test_delete_category_unassigns_expenses():
+    """Deleting a category unassigns or reassigns affected expenses."""
+    # TODO: Delete with dependencies, verify
 
-def test_category_mapping_manual():
-    """Test manual mapping of an expense to a category."""
-    # TODO: Assign and assert mapping.
+def test_apply_category_mapping_rule_to_description():
+    """Mapping rule correctly matches and categorizes expenses."""
+    # TODO: Rule (e.g., regex) applied to expense description
 
-def test_category_mapping_rule_based():
-    """Test rule-based mapping applies category correctly."""
-    # TODO: Define a mapping rule and assert auto-application.
+def test_category_hierarchy_allows_grouping():
+    """Categories can be grouped in a hierarchy."""
+    # TODO: Create parent/child, assert hierarchy
 ```
 
----
-
-## test_import_agent.py
+## tests/test_accounts.py
 
 ```python
-def test_import_valid_csv():
-    """Test importing a well-formed CSV creates expenses and logs import."""
-    # TODO: Import, check expenses and import log.
+def test_create_account_persists_data():
+    """Account creation stores name and metadata."""
+    # TODO: Create and fetch
 
-def test_import_malformed_csv():
-    """Test import handles malformed CSV with error logging."""
-    # TODO: Attempt import, verify error logging, and confirm rollback.
+def test_update_account_changes_fields():
+    """Account fields (name/etc) can be edited."""
+    # TODO: Edit and verify
 
-def test_import_duplicate_expenses():
-    """Test importing duplicate expenses are detected/prevented."""
-    # TODO: Import and assert deduplication or error.
-
-def test_import_missing_required_fields():
-    """Test CSV rows missing required fields are handled gracefully."""
-    # TODO: Trigger and assert import errors.
-
-def test_import_log_entry_contents():
-    """Test import logs contain correct metadata and error details."""
-    # TODO: Inspect and assert import log record structure.
+def test_delete_account_removes_expenses_or_reassigns():
+    """Account deletion handles dependent expenses as specified."""
+    # TODO: Delete; check orphaned/reassigned expenses
 ```
 
----
-
-## test_recurring_detector_agent.py
+## tests/test_insights.py
 
 ```python
-def test_detect_monthly_recurring_expense():
-    """Test detection of monthly recurring expenses (subscriptions)."""
-    # TODO: Feed test data, run detection, and assert pattern found.
+def test_generate_spending_trends_insight():
+    """Insight engine produces spending trend analytics."""
+    # TODO: Add time-ordered data, check trends
 
-def test_detect_weekly_recurring_expense():
-    """Test detection of weekly recurring expenses."""
-    # TODO: Run on weekly data, check for recurring pattern entry.
+def test_detect_anomalies_outlier_expenses():
+    """Anomaly detection flags large/unusual expenses."""
+    # TODO: Add outliers, check detection
 
-def test_detect_spurious_non_recurring():
-    """Test system does not falsely detect non-recurring patterns."""
-    # TODO: Input with no recurring pattern, assert none detected.
-
-def test_update_recurring_pattern_status():
-    """Test updating the status of a detected recurring pattern."""
-    # TODO: Change status and assert update.
-
-def test_link_expenses_to_recurring_pattern():
-    """Ensure expenses are properly linked to a detected recurring pattern."""
-    # TODO: Check association post-detection.
+def test_generate_recommendations_for_saving():
+    """Recommendations for improvement are generated based on expense patterns."""
+    # TODO: Simulate overspending, check suggestions
 ```
 
----
-
-## test_comparison_agent.py
+## tests/test_comparison.py
 
 ```python
-def test_compare_period_summaries():
-    """Test comparison summary between two date ranges."""
-    # TODO: Compare ranges, assert calculated differences.
+def test_compare_periods_summarizes_key_stats():
+    """Comparison across periods yields correct totals and category splits."""
+    # TODO: Compare two sample periods
 
-def test_category_breakdown_between_periods():
-    """Test category breakdown comparison between periods."""
-    # TODO: Assert per-category differences.
+def test_compare_custom_date_ranges():
+    """Custom date ranges can be selected and compared."""
+    # TODO: Use arbitrary user dates
 
-def test_custom_date_range_comparison():
-    """Test comparisons for arbitrary custom date ranges."""
-    # TODO: Input date ranges, assert summary output.
-
-def test_large_dataset_comparison_performance():
-    """Test that comparison logic performs acceptably on large datasets."""
-    # TODO: Simulate/running on many expenses, measure performance.
+def test_compare_handling_of_empty_periods():
+    """Empty or non-overlapping periods are handled gracefully."""
+    # TODO: Compare to period with no data
 ```
 
----
-
-## test_visualization_agent.py
+## tests/test_visualization.py
 
 ```python
-def test_generate_category_breakdown_chart():
-    """Test generation of category breakdown chart for a period."""
-    # TODO: Generate and check output/chart structure.
+def test_generate_category_breakdown_chart_data():
+    """Category breakdown chart data is correct for provided expenses."""
+    # TODO: Mock data and generate breakdown
 
-def test_generate_time_series_trend_chart():
-    """Test generation of time-series expense trend chart."""
-    # TODO: Generate/serialize and validate data.
+def test_generate_time_series_trend_chart_data():
+    """Time-series trend data reflects expenses over time."""
+    # TODO: Add regular/irregular data, generate chart input
 
-def test_generate_comparison_chart():
-    """Test visual chart output comparing different date ranges."""
-    # TODO: Produce and verify chart data.
+def test_generate_comparison_chart_between_ranges():
+    """Comparison chart data accurately represents multi-range differences."""
+    # TODO: Use two sets, check chart prep
 
-def test_visualization_cli_output():
-    """Test that visualizations render as text/ASCII in CLI mode."""
-    # TODO: Generate and check shown output for CLI.
-
-def test_visualization_api_output_format():
-    """Test that chart/report output is compatible with API (e.g., image, data)."""
-    # TODO: Generate and validate API response data structure.
+def test_cli_ascii_chart_renders_expected_output():
+    """CLI chart renderer outputs readable ASCII representation."""
+    # TODO: Feed data, check output contains expected bars/labels
 ```
 
----
-
-## test_insight_agent.py
+## tests/test_imports.py
 
 ```python
-def test_detect_spending_trends():
-    """Test detection and summarization of spending trends."""
-    # TODO: Process data, check identified trend.
+def test_log_import_success_entry():
+    """ImportLogger logs successful import with summary."""
+    # TODO: Simulate success import, check log stored
 
-def test_identify_spending_anomalies():
-    """Test insight generation finds anomalies (unexpected spikes/dips)."""
-    # TODO: Assert anomaly detection output.
+def test_log_import_error_handling():
+    """ImportLogger stores errors and details for failed import."""
+    # TODO: Trigger error, verify error log contents
 
-def test_generate_suggestions_for_saving():
-    """Test that improvement suggestions are produced from data analysis."""
-    # TODO: Validate that at least one suggestion is made.
-
-def test_insight_reports_text_content():
-    """Test that insight reports contain expected structure and fields."""
-    # TODO: Generate, parse, check for required content.
+def test_view_import_logs_paginates_results():
+    """Viewing import logs supports pagination and filtering."""
+    # TODO: Add logs, fetch pages
 ```
 
----
-
-## test_end_to_end.py
+## tests/test_api.py
 
 ```python
-def test_e2e_import_to_comparison_report():
-    """End-to-end: Import CSV, categorize, compare periods, produce report."""
-    # TODO: Simulate and verify full flow.
+def test_api_add_expense_endpoint():
+    """POST /expenses adds a new expense via API."""
+    # TODO: Call endpoint, check DB
 
-def test_e2e_manual_entry_to_visualization():
-    """End-to-end: Manually add expenses, generate breakdown chart."""
-    # TODO: Add, categorize, and visualize.
+def test_api_import_csv_endpoint():
+    """POST /expenses/import-csv processes file and returns summary."""
+    # TODO: Upload CSV, check response
 
-def test_e2e_recurring_detection_to_insight():
-    """End-to-end: Detect recurring expenses and generate insights."""
-    # TODO: Full flow from data to insights.
+def test_api_compare_periods_endpoint():
+    """GET /comparison returns correct stats for requested ranges."""
+    # TODO: Call, check stats JSON
 
-def test_e2e_error_handling_on_csv_import():
-    """End-to-end: Import malformed CSV, confirm error logging and data rollback."""
-    # TODO: Confirm robust error/audit trail.
+def test_api_visualization_chart_endpoint():
+    """GET /visualizations returns expected chart content or links."""
+    # TODO: Call, check image/ASCII content
+
+def test_api_filter_expenses_by_category_and_date():
+    """GET /expenses supports filtering by category and date."""
+    # TODO: Call with params, check response slice
+
+def test_api_error_response_on_malformed_input():
+    """API returns clear error for malformed requests."""
+    # TODO: POST invalid data, check error
+
+def test_api_export_json_csv_formats():
+    """API export supports both JSON and CSV outputs."""
+    # TODO: Request export, check format
+```
+
+## tests/test_cli.py
+
+```python
+def test_cli_add_expense_interactive_flow():
+    """CLI adds expense through user prompts."""
+    # TODO: Simulate prompts, verify result
+
+def test_cli_import_csv_command():
+    """CLI import-csv command processes a sample file."""
+    # TODO: Invoke with file, verify summary
+
+def test_cli_show_comparison_outputs_textual_report():
+    """CLI comparison command outputs readable textual summary."""
+    # TODO: Run, capture output
+
+def test_cli_show_ascii_chart_displays_histogram():
+    """CLI chart command prints ASCII-art chart in terminal."""
+    # TODO: Invoke, assert on output bars
+
+def test_cli_error_on_invalid_command_args():
+    """CLI returns error/help on invalid input."""
+    # TODO: Run with wrong args, check output
 ```
 
 # 3. Edge Cases and Negative Tests
 
-```python
-def test_expense_creation_empty_input():
-    """Test handling of completely empty input for expense creation."""
-    # TODO: Ensure validation rejects empty input.
-
-def test_expense_negative_amount():
-    """Test that negative expense amounts are accepted/flagged per rules."""
-    # TODO: Create negative amount, check outcome.
-
-def test_duplicate_category_name():
-    """Test that duplicate category names are handled (rejected or merged)."""
-    # TODO: Attempt duplicate, check system behavior.
-
-def test_import_csv_non_utf8_encoding():
-    """Test import of CSV files with non-UTF8 encoding."""
-    # TODO: Attempt import, ensure proper error or correction.
-
-def test_import_with_extra_unknown_columns():
-    """Test import when CSV contains extra/unrecognized columns."""
-    # TODO: Import and confirm extra data is ignored or flagged.
-
-def test_delete_category_in_use():
-    """Test deleting a category currently linked to expenses."""
-    # TODO: Ensure system requires remap/fails gracefully.
-
-def test_compare_with_no_expenses():
-    """Test period comparison functionality when no expenses exist."""
-    # TODO: Run comparison, assert empty/zero results.
-
-def test_visualization_with_empty_dataset():
-    """Test chart/report generation on empty inputs (should not error)."""
-    # TODO: Generate and verify graceful output.
-
-def test_large_file_import_performance():
-    """Test importing a very large CSV file."""
-    # TODO: Simulate and assert time/memory constraints.
-
-def test_anomaly_detection_on_constant_data():
-    """Test anomaly detection with no true anomalies."""
-    # TODO: Input constant/boring data, ensure no false positives.
-```
+- Add expense with missing/invalid fields (e.g., negative amount, missing category).
+- Import CSV with malformed content, incorrect columns, or encoding issues.
+- Category mapping rule that matches no expenses, or ambiguous mapping.
+- Detecting recurring expenses with irregular frequency, small variations in amounts or dates.
+- Deleting categories/accounts in use by existing expenses.
+- Visualization with no data, all data zero, or a single data point.
+- Comparison across non-overlapping, empty, or identical periods.
+- Insights where all expenses are constant (no trend/anomaly).
+- API requests with invalid JSON or missing required params.
+- CLI executed in non-interactive mode (stdin closed).
+- Bulk operations (large CSVs, rapid API calls) for resource handling.
 
 # 4. Test Data Suggestions
 
-- **Expense Data:**
-  - Several entries for the same recurring subscription (monthly, differing amounts/dates)
-  - Expenses with missing fields (date, category, amount set to None)
-  - Out-of-order dates, negative and zero amounts
-  - Same expense uploaded twice (test deduplication)
-  - Multiple categories, some unused
-  - "Edge" amounts: large values, very small (cents), negative, and zero
-- **CSV Samples:**
-  - Well-formed CSV with all fields
-  - CSV with missing headers/columns
-  - CSV with corrupted/extra/unexpected columns
-  - Non-UTF8 encoded CSV files (e.g., Windows-1252)
-  - Large CSV file with thousands of entries
-- **Categories:**
-  - Names with special/unicode characters
-  - Duplicate category names
-  - Categories with/without mapping rules
-- **Recurring Patterns:**
-  - Sets of expenses that almost, but not quite, recur (e.g., monthly but with occasional skips/jumps)
-  - Overlapping recurring patterns (e.g., Netflix and Spotify both recurring around the start of each month)
-- **Comparison Ranges:**
-  - Ranges with no overlap, partial overlap, and exact overlap
-  - Periods with no expenses, all expenses in one category, etc.
-- **Visualization/Insights:**
-  - Data that produces flat charts, highly skewed charts, and datasets with outliers
-  - Expenses with obvious anomalies (single large spike, many normal)
-  - Long trends (e.g., increasing or decreasing spending)
-  - Datasets with no recurrence/trend to ensure non-detection
+- Expenses: a mix of dates (current, past, future), amounts (positive, zero, negative), diverse descriptions, categories, and accounts.
+- CSV samples: valid/complete; missing/extra columns; invalid dates or numbers; duplicate rows.
+- Categories: simple flat set; hierarchies; names differing only by case.
+- Category mapping: regex that matches multiple/non-overlapping descriptions; overlapping rules.
+- Recurring expenses: regular patterns (same day, amount); "fuzzy" recurrences (±1 day, ≈amount); single occurrences.
+- Comparison: two periods with overlapping categories; one with no data; periods of widely different lengths.
+- Visualization: datasets with 0, 1, N categories; outlier expenses; dense and sparse time ranges.
+- Import logs: success and failure entries, different timestamps, filenames, and error messages.
+- API/CLI: valid and invalid payloads/inputs; batch and edge-case requests (e.g., filter outside data range).
 
-These datasets should be used as fixtures or mocks across relevant tests.
+This test plan and skeletons ensure comprehensive coverage of functional paths, validations, error handling, and user-visible behavior for the Expense Comparator.
