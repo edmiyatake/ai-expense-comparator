@@ -1,7 +1,6 @@
 # Agent Design – MCP Multi-Agent Expense Comparator
 
-This document defines each agent in the system, including its role, inputs, outputs, and interaction pattern with other agents and MCP tools.
-
+This document defines each agent in the system, including its role, inputs, outputs, responsibilities, and interaction patterns with other agents and MCP tools.
 ---
 
 ## 1. Overview
@@ -40,7 +39,10 @@ All agents follow a similar logical interface:
   - Updated `AgentContext` fields as needed.
 
 - **LLM Call Pattern:**
-  - Create prompt → Call shared LLM client → Parse structured output → Log usage.
+  - Construct a structured prompt.
+  - Invoke the shared LLM provider.
+  - Parse the model output into strongly typed Python models.
+  - Report token usage to the Usage Tracker MCP tool.
 
 ---
 
@@ -54,7 +56,7 @@ Defines a **high-level task plan** for transforming the raw input (description +
 
 - Software description (string).
 - Raw requirements (string or list).
-- Any professor/TA constraints (if provided).
+- Any additional constraints (professor/TA instructions, visualization requirements)
 
 ### 3.3 Outputs
 
@@ -113,6 +115,8 @@ Provides “tools” agents can use:
 - Writes generated code to disk:
   - `generated_app/`
   - `generated_tests/`
+  - `generated_visuals/`
+- Prevents agents from directly touching the filesystem.
 
 #### **Usage Tracker Tool**
 - Records:
