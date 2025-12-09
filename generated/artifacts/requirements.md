@@ -1,95 +1,85 @@
 ## 1. Functional Requirements
 
-1.1 The system shall allow users to manually enter expenses with date, description, amount, category, and account fields.
+1.1 The system shall allow users to manually create, read, update, and delete expenses, each with date, description, amount, category, and account fields.
 
-1.2 The system shall allow users to edit and delete existing expenses.
+1.2 The system shall allow users to upload expense data via CSV files, supporting field mapping and bulk import.
 
-1.3 The system shall allow users to import expenses via CSV uploads.
+1.3 The system shall allow users to create, edit, delete, and list expense categories, each with name, description, and mapped keywords.
 
-1.4 The system shall support CRUD (create, read, update, delete) operations on categories.
+1.4 The system shall allow mapping of imported expenses to categories based on user configuration and keywords.
 
-1.5 The system shall support category mapping rules for automatic categorization during import or entry.
+1.5 The system shall enable users to compare expenses across different pre-defined and custom date ranges.
 
-1.6 The system shall support CRUD operations on expense accounts.
+1.6 The system shall automatically detect recurring expenses and flag them for the user.
 
-1.7 The system shall provide functionality to compare expenses across selectable preset and custom date ranges.
+1.7 The system shall generate insights highlighting spending trends, anomalies, and potential areas for financial improvement.
 
-1.8 The system shall detect and identify recurring expenses, such as subscriptions.
+1.8 The system shall log each import operation, capturing timestamp, filename, mapping information, status, and errors.
 
-1.9 The system shall log all import activities and errors.
+1.9 The system shall store all expenses, categories, recurring patterns, and import logs persistently.
 
-1.10 The system shall generate and return financial insights, including spending trends, anomalies, and suggestions for improvement.
-
-1.11 The system shall allow users to filter, sort, and paginate lists of expenses and categories.
-
-1.12 The system shall provide both CLI and RESTful API interfaces for all core operations.
-
-1.13 The system shall allow exporting data and reports in JSON and CSV formats.
+1.10 The system shall provide a CLI and/or API allowing all data entry, report generation, and visualization actions defined above.
 
 ## 2. Non-Functional Requirements
 
-2.1 The system shall persist all data, including expenses, categories, mapping rules, recurring patterns, accounts, and import logs, in a relational database.
+2.1 The system shall be modular to allow for extensibility and independent development of features.
 
-2.2 The system shall support concurrent usage without data corruption.
+2.2 The codebase shall be organized in a manner that supports unit and integration testing of all components.
 
-2.3 The system shall respond within 2 seconds for expense entry, edits, or retrieval under load of up to 10,000 expenses.
+2.3 The system shall validate all user and file input and provide clear error messages for invalid data.
 
-2.4 The system shall be modular, allowing for independent testing and future extensibility.
+2.4 The system shall be able to handle large datasets, including historical financial data, without significant degradation in performance.
 
-2.5 The system shall provide reliable error handling and user feedback for failed or malformed imports.
+2.5 The system shall provide robust error handling during CSV import, data processing, and report generation.
 
-2.6 The system shall support schema migrations for the data models.
+2.6 The system shall use scalable storage and efficient query practices for reporting features.
 
-2.7 The system shall allow chart/graph generation with clear labeling and accessible formats.
+2.7 The system shall provide migration support for future database schema changes.
 
-2.8 The system shall support both interactive CLI usage and RESTful API endpoints for all features.
+2.8 The system shall support both CLI and API-based interactions without dependency on a graphical UI.
 
 ## 3. Data & Integration Requirements
 
-3.1 Expenses shall contain fields for date, description, amount, category, and account.
+3.1 The system shall use a relational database (e.g., SQLite, PostgreSQL) for persistent storage of all domain objects.
 
-3.2 Categories shall support user-definable names and optional hierarchical groupings.
+3.2 The database schema shall include tables for expenses, categories, recurring patterns, and import logs.
 
-3.3 The system shall allow defining and managing category mapping rules (e.g., regex on description).
+3.3 Each expense record shall link to its category, account, import log, and associated recurring pattern if applicable.
 
-3.4 The system shall parse and validate CSV imports, mapping columns to expense fields.
+3.4 The system shall create an index on date and category fields to optimize reporting and aggregation queries.
 
-3.5 Import logs shall store details about each import (timestamp, file data, errors, results).
+3.5 The system shall support temporary storage of files during CSV import processing.
 
-3.6 Recurring expense patterns shall be stored and updated as new matching expenses are identified.
+3.6 Import logs shall record mapping details and errors arising from file ingestion.
 
-3.7 The system shall support integration with external tools for data analysis and visualization (e.g., matplotlib, plotly), but no direct integration with financial institutions is required.
-
-3.8 The system shall handle and store all date and time data in a consistent, timezone-aware format.
+3.7 The system shall not require user authentication or multi-user separation in the initial implementation.
 
 ## 4. Visualization & Reporting Requirements
 
-4.1 The system shall generate category breakdown charts for expenses over selectable date ranges.
+4.1 The system shall generate category breakdown charts for a given time period.
 
-4.2 The system shall generate time-series trend charts for expenses.
+4.2 The system shall generate time-series trend charts visualizing expense totals over time.
 
-4.3 The system shall generate comparison charts visualizing differences between two or more date ranges.
+4.3 The system shall generate comparison charts between two or more selected date ranges.
 
-4.4 The system shall generate text-based or ASCII-art chart outputs suitable for CLI usage.
+4.4 The system shall present both visual reports (charts/graphs) and textual summaries for all analytics and comparisons.
 
-4.5 The system shall export visualizations as image files or data representations (e.g., PNG, SVG, ASCII).
+4.5 The system shall support ASCII/terminal-based charts for CLI and image/XML/JSON-based output for API clients.
 
-4.6 The system shall generate textual summaries to accompany visual reports, including summary statistics and key findings.
-
-4.7 The system shall allow filtering visualizations by category, account, and custom date range.
+4.6 The system shall flag and separately report identified recurring expenses and anomalies.
 
 ## 5. Out-of-Scope and Assumptions
 
-5.1 Multi-user authentication and authorization are out of scope for the initial implementation.
+5.1 The system will not implement user authentication, account management, or multi-user support.
 
-5.2 Direct integration with bank APIs or live financial institution connections is out of scope.
+5.2 The system will not connect directly to bank APIs or handle encrypted/protected data sources.
 
-5.3 The system assumes input CSVs are either in a supported bank export format or can be mapped/configured by the user.
+5.3 The system assumes CSV file imports are in a standard, consistent encoding and structure.
 
-5.4 Internationalization, localization, and currency conversion are not supported in the initial implementation.
+5.4 The system will not provide a web- or mobile-based graphical user interface.
 
-5.5 Advanced AI-based recommendations for spending improvement are not required; simple rules-based suggestions are sufficient.
+5.5 The system will use local or configured storage only and will not require cloud deployment features.
 
-5.6 The system does not guarantee perfect detection of all recurring expenses; only detectable patterns are reported.
+5.6 The system assumes that customization of financial improvement insights is limited to simple heuristic rules, not automated financial advice or machine learning recommendations.
 
-5.7 Data security and encryption are assumed to be handled by deployment best practices, not covered in core requirements.
+5.7 Currency normalization, multi-currency support, and timezone handling are optional and not required in the initial implementation.

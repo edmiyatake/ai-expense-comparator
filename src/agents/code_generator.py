@@ -97,15 +97,14 @@ class CodeGeneratorAgent(Agent):
         parts.append(
             dedent(
                 """
-                You are generating a minimal but runnable Python CLI module
-                for the AI Expense Comparator demo.
+                You are generating a runnable Python 3.9 module for the AI Expense Comparator.
 
-                The purpose of this module is to take a natural-language prompt
-                from the command line and forward it into the existing AI
-                Expense Comparator pipeline, which is exposed via the
-                `python -m mcp.orchestrator` entrypoint.
+                The output module must comply with **all requirements** provided in the prompt sections below
+                - High level description
+                - Planner plan
+                - Requirements
 
-                Requirements for the generated module:
+                Additional Requirements for the generated module:
 
                 - Return only **valid Python 3 code**.
                 - Do **not** wrap the code in Markdown fences.
@@ -138,7 +137,7 @@ class CodeGeneratorAgent(Agent):
                 is sufficient; the orchestrator module is responsible for running
                 the full multi-agent pipeline.
 
-                Keep the code clear and minimal, but fully runnable.
+                Keep the code clear and fully runnable.
                 """
             ).strip()
         )

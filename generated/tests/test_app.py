@@ -1,56 +1,62 @@
 import sys
 import os
-
-# Ensure we can import from the project root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-
 from datetime import date
-from app.app import Expense, totals_by_category, compare_periods
+import pytest
 
+# Ensure imports work when running tests from the project root
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.app import Expense, totals_by_category, compare_periods
 
 def test_totals_by_category_simple_case():
     expenses = [
-        Expense(date=date(2024, 1, 10), description="Coffee", amount=3.5, category="Food", account="Checking"),
-        Expense(date=date(2024, 1, 11), description="Lunch", amount=12.0, category="Food", account="Credit"),
-        Expense(date=date(2024, 1, 12), description="Bus ticket", amount=2.75, category="Transport", account="Checking"),
+        Expense(date=date(2024, 5, 1), description="Lunch", amount=12.5, category="Food", account="Checking"),
+        Expense(date=date(2024, 5, 2), description="Groceries", amount=50, category="Food", account="Checking"),
+        Expense(date=date(2024, 5, 3), description="Bus", amount=2.75, category="Transport", account="Checking"),
+        Expense(date=date(2024, 5, 3), description="Coffee", amount=3, category="Food", account="Credit"),
     ]
-    totals = totals_by_category(expenses)
-    assert isinstance(totals, dict)
-    assert set(totals.keys()) == {"Food", "Transport"}
-    assert totals["Food"] == 15.5
-    assert totals["Transport"] == 2.75
-
+    result = totals_by_category(expenses)
+    assert isinstance(result, dict)
+    assert result["Food"] == pytest.approx(65.5)
+    assert result["Transport"] == pytest.approx(2.75)
+    assert set(result.keys()) == {"Food", "Transport"}
 
 def test_compare_periods_detects_increase():
     period_a = [
-        Expense(date=date(2024, 2, 10), description="Groceries", amount=50.0, category="Groceries", account="Debit"),
+        Expense(date=date(2024, 5, 1), description="Lunch", amount=10, category="Food", account="Checking"),
+        Expense(date=date(2024, 5, 2), description="Bus", amount=2, category="Transport", account="Checking"),
     ]
     period_b = [
-        Expense(date=date(2024, 3, 10), description="Groceries", amount=75.0, category="Groceries", account="Credit"),
+        Expense(date=date(2024, 6, 1), description="Dinner", amount=25, category="Food", account="Checking"),
+        Expense(date=date(2024, 6, 2), description="Taxi", amount=8, category="Transport", account="Credit"),
     ]
     result = compare_periods(period_a, period_b)
-    assert "Groceries" in result
-    assert result["Groceries"]["period_a"] == 50.0
-    assert result["Groceries"]["period_b"] == 75.0
-    assert result["Groceries"]["delta"] == 25.0
-    assert result["Groceries"]["trend"] in ("increase", "up", "+")  # trend string may vary
-
+    assert "Food" in result
+    assert "Transport" in result
+    assert result["Food"]["period_a"] == pytest.approx(10)
+    assert result["Food"]["period_b"] == pytest.approx(25)
+    assert result["Food"]["delta"] == pytest.approx(15)
+    assert result["Transport"]["period_a"] == pytest.approx(2)
+    assert result["Transport"]["period_b"] == pytest.approx(8)
+    assert result["Transport"]["delta"] == pytest.approx(6)
 
 def test_compare_periods_handles_missing_categories():
     period_a = [
-        Expense(date=date(2024, 4, 10), description="Rent", amount=1000.0, category="Housing", account="Debit"),
+        Expense(date=date(2024, 5, 1), description="Lunch", amount=10, category="Food", account="Checking")
     ]
     period_b = [
-        Expense(date=date(2024, 5, 10), description="Electricity", amount=100.0, category="Utilities", account="Debit"),
+        Expense(date=date(2024, 6, 1), description="Shoes", amount=50, category="Shopping", account="Credit")
     ]
     result = compare_periods(period_a, period_b)
-    # Both categories must appear with zeros for their missing period
-    assert "Housing" in result
-    assert "Utilities" in result
-    assert result["Housing"]["period_a"] == 1000.0
-    assert result["Housing"]["period_b"] == 0.0
-    assert result["Utilities"]["period_a"] == 0.0
-    assert result["Utilities"]["period_b"] == 100.0
-    # Deltas calculated properly
-    assert result["Housing"]["delta"] == -1000.0
-    assert result["Utilities"]["delta"] == 100.0
+    # Category appears in period_a only
+    assert "Food" in result
+    assert result["Food"]["period_a"] == pytest.approx(10)
+    assert result["Food"]["period_b"] == pytest.approx(0)
+    assert result["Food"]["delta"] == pytest.approx(-10)
+    # Category appears in period_b only
+    assert "Shopping" in result
+    assert result["Shopping"]["period_a"] == pytest.approx(0)
+    assert result["Shopping"]["period_b"] == pytest.approx(50)
+    assert result["Shopping"]["delta"] == pytest.approx(50)
+    # Only these categories in result
+    assert set(result.keys()) == {"Food", "Shopping"}
