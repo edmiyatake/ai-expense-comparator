@@ -28,15 +28,56 @@ class CodeGeneratorAgent(Agent):
     # ------------------------------------------------------------------ #
     # Prompt construction helpers
     # ------------------------------------------------------------------ #
-
     def _build_prompt(
         self,
         user_request: str,
         planner_plan: Optional[str],
         requirements_text: Optional[str],
     ) -> str:
-        ...
-        return "\n".join(parts)
+        """
+        Build the prompt for generating the code skeleton (Markdown).
+        """
+        parts: list[str] = []
+
+        parts.append(
+            dedent(
+                """
+                You are designing the initial code skeleton for an "AI Expense Comparator"
+                application. Produce a high-level project layout and brief file-level
+                descriptions in **Markdown**.
+
+                The goal is to give another engineer a clear starting point for implementing
+                the system, not to write full implementation code.
+                """
+            ).strip()
+        )
+
+        parts.append("## Overall Goal\n")
+        parts.append(user_request.strip())
+
+        if planner_plan:
+            parts.append("\n## Planner Plan\n")
+            parts.append(planner_plan.strip())
+
+        if requirements_text:
+            parts.append("\n## Requirements\n")
+            parts.append(requirements_text.strip())
+
+        parts.append(
+            dedent(
+                """
+                ## Instructions
+
+                - Output must be valid Markdown.
+                - Start with a short section titled "Project Structure".
+                - Use a tree-like bullet list for folders and key files.
+                - For each important file, include a one-sentence description.
+                - Do **not** include any marketing language or extra commentary.
+                """
+            ).strip()
+        )
+
+        return "\n\n".join(parts)
 
     def _build_app_module_prompt(
         self,
@@ -44,20 +85,129 @@ class CodeGeneratorAgent(Agent):
         planner_plan: Optional[str],
         requirements_text: Optional[str],
     ) -> str:
-        ...
-        return "\n".join(parts)
+        """
+        Build the prompt for generating a runnable Python app module (app/app.py).
+        """
+        parts: list[str] = []
+
+        parts.append(
+            dedent(
+                """
+                You are generating a minimal but runnable Python application module
+                for the AI Expense Comparator.
+
+                The module should:
+                - Expose a `main()` function.
+                - Parse command-line arguments for an optional prompt string.
+                - Call into the AI Expense Comparator orchestration pipeline
+                  (assume it will be wired later; for now you may stub it).
+                - Print simple status messages to stdout.
+
+                IMPORTANT:
+                - Return only **valid Python code**.
+                - Do **not** wrap the code in Markdown fences.
+                - Do **not** include commentary or explanations.
+                """
+            ).strip()
+        )
+
+        parts.append("\n# High-level description of the system\n")
+        parts.append(user_request.strip())
+
+        if planner_plan:
+            parts.append("\n# Planner plan\n")
+            parts.append(planner_plan.strip())
+
+        if requirements_text:
+            parts.append("\n# Requirements\n")
+            parts.append(requirements_text.strip())
+
+        return "\n\n".join(parts)
 
     # ------------------------------------------------------------------ #
     # Deterministic fallbacks (no LLM)
     # ------------------------------------------------------------------ #
 
     def _fallback_skeleton(self) -> str:
-        ...
+        """
+        Simple deterministic skeleton used when no LLM is available.
+        """
+        return dedent(
+            """
+            # AI Expense Comparator – Code Skeleton (Fallback)
+
+            ## Project Structure
+
+            - src/
+              - app/
+                - main.py          # CLI entrypoint for running the pipeline
+              - agents/
+                - planner.py       # High-level plan generator
+                - requirements_interpreter.py  # Turns plan into detailed requirements
+                - code_generator.py # Generates code skeleton + app module
+                - test_generator.py # Generates test skeletons
+                - reviewer.py       # Performs architectural review
+              - mcp/
+                - orchestrator.py   # Orchestrates agents and tools
+                - tools/
+                  - base.py         # Tool base classes and registry
+                  - llm.py          # LLMTool implementation
+                  - file.py         # FileTool implementation
+                  - usage_tracker.py# Usage tracking
+
+            This is a minimal, deterministic fallback in case the LLM tool
+            is not available.
+            """
         ).strip()
 
     def _fallback_app_module(self) -> str:
-        ...
+        """
+        Simple deterministic app/app.py module used when no LLM is available.
+        """
+        return dedent(
+            """
+            \"\"\"Fallback Expense Comparator CLI application.
+
+            This module is intentionally simple. In a real deployment, the main()
+            function would call into the orchestrator to run the full AI pipeline.
+            \"\"\"
+
+            from __future__ import annotations
+
+            import argparse
+            import sys
+
+
+            def run_pipeline(prompt: str) -> None:
+                \"\"\"Placeholder for the real orchestration pipeline.
+
+                For now we just echo the prompt so the generated app is runnable.
+                \"\"\"
+                print("Running AI Expense Comparator pipeline...")
+                print(f"User prompt: {prompt}")
+
+
+            def main(argv: list[str] | None = None) -> int:
+                parser = argparse.ArgumentParser(
+                    description="AI Expense Comparator (fallback CLI)"
+                )
+                parser.add_argument(
+                    "--prompt",
+                    type=str,
+                    default="Build an Expense Comparator application.",
+                    help="Natural language request describing the desired expense tool.",
+                )
+
+                args = parser.parse_args(argv)
+                run_pipeline(args.prompt)
+                return 0
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """
         ).strip()
+
 
     # ------------------------------------------------------------------ #
     # Main run method
