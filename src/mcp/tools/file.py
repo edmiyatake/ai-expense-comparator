@@ -32,7 +32,8 @@ class FileTool(Tool):
 
         super().__init__(
             name="file",
-            description="Read, write, and list files within the generated/ directory.",
+            description="Read, write, and list files within the generated/ directory, including "
+                        "source code, tests, and documentation.",
             parameters_schema={
                 "type": "object",
                 "properties": {
