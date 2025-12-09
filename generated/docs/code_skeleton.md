@@ -1,211 +1,292 @@
-# 1. Project Structure (tree layout rooted at src/)
-
+1. Project Structure (tree layout rooted at src/)
 ```
 src/
-├── cli/
-│   └── commands.py
-├── api/
-│   ├── server.py
-│   └── routes.py
-├── core/
-│   ├── import_csv.py
-│   ├── normalization.py
+├── models/
+│   ├── user.py
+│   ├── account.py
+│   ├── category.py
+│   ├── expense.py
+│   ├── recurring_pattern.py
+│   ├── import_log.py
+│   └── insight.py
+├── db/
+│   ├── orm.py
+│   └── session.py
+├── agents/
+│   ├── expenses.py
+│   ├── categories.py
+│   ├── accounts.py
+│   ├── import_agent.py
 │   ├── recurring.py
 │   ├── comparison.py
-│   └── insights.py
-├── models/
-│   ├── domain.py
-│   └── storage.py
-├── persistence/
-│   ├── database.py
-│   ├── repositories.py
-│   └── archive.py
-├── orchestration/
-│   └── workflow.py
+│   ├── insights.py
+│   ├── visualization.py
+│   └── orchestrator.py
 ├── visualization/
-│   └── reporting.py
+│   ├── chart_ascii.py
+│   └── chart_json.py
+├── cli/
+│   ├── commands.py
+│   └── io_utils.py
 ├── tests/
-│   └── (unit and integration tests)
-└── utils/
-    └── helpers.py
+│   ├── test_expenses.py
+│   ├── test_categories.py
+│   ├── test_accounts.py
+│   ├── test_import.py
+│   ├── test_recurring.py
+│   ├── test_comparison.py
+│   ├── test_visualization.py
+│   ├── test_insights.py
+│   └── test_cli_flow.py
 ```
 
-# 2. Modules and Responsibilities
+---
 
-- **cli/commands.py**  
-  Defines CLI commands for importing CSVs, normalization, recurring detection, comparison, and report retrieval.
+2. Modules and Responsibilities
 
-- **api/server.py, api/routes.py**  
-  REST API setup, endpoint definitions (upload, view transactions, recurring groups, compare, reports).
+- `models/`: Defines ORM models (User, Account, Category, Expense, RecurringPattern, ImportLog, Insight) mapping directly to domain/entities.
+- `db/`: Database setup, session management, and ORM helpers for persistence, querying, and migrations.
+- `agents/`: Encapsulate business/domain logic for expenses, categories, accounts, CSV import, recurring detection, comparison/aggregation, insights, visualization, and overall orchestration.
+- `visualization/`: Utilities for transforming analytic results into ASCII charts (CLI) and JSON structures (API).
+- `cli/`: Command-line interface logic, input/output parsing, user-driven flows, and pretty-printing utilities.
+- `tests/`: Unit, integration, and regression test cases for agents, models, CLI flows, and edge cases.
 
-- **core/import_csv.py**  
-  Parses/imports various bank CSV formats to `BankTransaction` objects, resolves schema differences.
+---
 
-- **core/normalization.py**  
-  Handles category normalization (raw → standard); supports rule, mapping, and ML-based approaches plus user overrides.
+3. Core Classes and Functions
 
-- **core/recurring.py**  
-  Detects recurring transaction groups according to defined similarity and periodicity rules.
-
-- **core/comparison.py**  
-  Calculates per-category/per-bank/period expense summaries and differences.
-
-- **core/insights.py**  
-  Generates summaries, anomalies, suggestions, and improvement hints from comparisons.
-
-- **models/domain.py**  
-  Defines core data models: BankTransaction, NormalizedTransaction, RecurringExpenseGroup, ComparisonReport.
-
-- **models/storage.py**  
-  Defines database (ORM) schemas; data model entities for persistence.
-
-- **persistence/database.py**  
-  Database config/init, ORM setup for SQLite/PostgreSQL.
-
-- **persistence/repositories.py**  
-  Data access layer: CRUD for transactions, normalization mappings, recurring groups, and reports.
-
-- **persistence/archive.py**  
-  Archives and retrieves raw uploaded CSVs, linked to user and bank.
-
-- **orchestration/workflow.py**  
-  End-to-end pipeline; coordinates agents for import, normalization, recurring detection, comparison, and reporting.
-
-- **visualization/reporting.py**  
-  Text and chart/graph generation (e.g., using matplotlib); formats reporting output.
-
-- **utils/helpers.py**  
-  Shared helpers/utilities: date parsing, deduplication, error handling, etc.
-
-- **tests/**  
-  Unit and integration tests for all core, persistence, and API/CLI functions.
-
-# 3. Core Classes and Functions
-
-**models/domain.py**
+##### models/user.py
 ```python
-class BankTransaction:
-    """Represents a raw transaction imported from a bank CSV."""
-    def __init__(self, date, amount, description, raw_category, bank, account_id, transaction_id): ...
-
-class NormalizedTransaction:
-    """Standardized transaction, with normalized category and (optional) recurring group info."""
-    def __init__(self, date, amount, description, normalized_category, source_bank, original_raw_category, recurring_id=None): ...
-
-class RecurringExpenseGroup:
-    """Group of recurring transactions (by pattern, similarity, periodicity)."""
-    def __init__(self, group_id, normalized_category, avg_amount, frequency, transactions, banks): ...
-
-class ComparisonReport:
-    """Report containing summarized and compared expense data (per category, period, bank, etc.)."""
-    def __init__(self, categories, period_range, data_by_bank, recurring_details, insights): ...
+class User(Base):
+    id: int
+    username: str
+    # For future multi-user support
 ```
 
-**core/import_csv.py**
+##### models/account.py
 ```python
-def import_csv(path: str, bank_name: str) -> list[BankTransaction]:
-    """Parse and map a bank's CSV file to a list of BankTransaction objects."""
+class Account(Base):
+    id: int
+    name: str
+    user_id: int | None
 ```
 
-**core/normalization.py**
+##### models/category.py
 ```python
-def normalize_transactions(transactions: list[BankTransaction], user_id: str) -> list[NormalizedTransaction]:
-    """Normalize raw transaction categories using standard mappings and user overrides."""
+class Category(Base):
+    id: int
+    name: str
+    mapped_names: list[str]
 ```
 
-**core/recurring.py**
+##### models/expense.py
 ```python
-def detect_recurring_transactions(transactions: list[NormalizedTransaction]) -> list[RecurringExpenseGroup]:
-    """Detect groups of recurring expenses based on pattern and frequency."""
+class Expense(Base):
+    id: int
+    date: date
+    description: str
+    amount: float
+    category_id: int
+    account_id: int
+    imported: bool
+    import_id: int | None
 ```
 
-**core/comparison.py**
+##### models/recurring_pattern.py
 ```python
-def compare_expenses(normalized_transactions: list[NormalizedTransaction], date_range=None) -> ComparisonReport:
-    """Aggregate and compare expenses by category, time period, and bank."""
+class RecurringPattern(Base):
+    id: int
+    description: str
+    frequency: str
+    matched_expense_ids: list[int]
 ```
 
-**core/insights.py**
+##### models/import_log.py
 ```python
-def generate_insights(report: ComparisonReport) -> list[str]:
-    """Generate actionable and explanatory text summaries from report data."""
+class ImportLog(Base):
+    id: int
+    filename: str
+    imported_at: datetime
+    expense_ids: list[int]
 ```
 
-**persistence/database.py**
+##### models/insight.py
 ```python
-def init_db(connection_string: str):
-    """Initialize and configure the database."""
+class Insight(Base):
+    id: int
+    date_generated: datetime
+    description: str
+    insight_type: str
 ```
 
-**persistence/repositories.py**
+##### db/orm.py
 ```python
-class TransactionRepository:
-    def add_transactions(self, transactions: list[BankTransaction|NormalizedTransaction]): ...
-    def get_transactions(self, user_id: str, filters: dict = None) -> list[NormalizedTransaction]: ...
-    # Other CRUD operations as needed
-
-class RecurringGroupRepository:
-    def save_groups(self, groups: list[RecurringExpenseGroup]): ...
-    def get_groups(self, user_id: str) -> list[RecurringExpenseGroup]: ...
-
-class ReportRepository:
-    def save_report(self, report: ComparisonReport, user_id: str): ...
-    def get_report(self, report_id: str) -> ComparisonReport: ...
+def init_db(connection_string: str) -> None:
+    """Initialize database schema and tables."""
+def get_session() -> Session:
+    """Return a new ORM DB session."""
 ```
 
-**persistence/archive.py**
+##### db/session.py
 ```python
-def archive_csv(file_path: str, user_id: str, bank_name: str, original_filename: str):
-    """Archive uploaded CSV for traceability."""
+Session = sessionmaker(...)
 ```
 
-**orchestration/workflow.py**
+##### agents/expenses.py
+```python
+class ExpenseAgent:
+    def create_expense(self, data: dict) -> Expense:
+        """Create and persist an expense."""
+    def edit_expense(self, expense_id: int, updates: dict) -> Expense:
+        """Edit an existing expense by ID."""
+    def delete_expense(self, expense_id: int) -> None:
+        """Remove an expense from the database."""
+    def list_expenses(self, filters: dict = None) -> list[Expense]:
+        """List expenses with optional filters (date, category, etc)."""
+```
+
+##### agents/categories.py
+```python
+class CategoryAgent:
+    def create_category(self, name: str) -> Category:
+        """Add a new category."""
+    def edit_category(self, category_id: int, updates: dict) -> Category:
+        """Edit the name or mappings of a category."""
+    def merge_categories(self, source_ids: list[int], target_id: int) -> None:
+        """Combine multiple categories into one."""
+    def map_category(self, name: str, to_category_id: int) -> None:
+        """Map an alternative name to a category."""
+    def list_categories(self) -> list[Category]:
+        """List all categories."""
+```
+
+##### agents/accounts.py
+```python
+class AccountAgent:
+    def create_account(self, name: str) -> Account:
+        """Create a new account."""
+    def edit_account(self, account_id: int, updates: dict) -> Account:
+        """Edit an account (name, etc)."""
+    def list_accounts(self) -> list[Account]:
+        """List all user accounts."""
+```
+
+##### agents/import_agent.py
+```python
+class ImportAgent:
+    def import_csv(self, file_path: str) -> ImportLog:
+        """Parse and import expenses from a CSV; log import."""
+    def get_import_log(self, import_id: int) -> ImportLog:
+        """Retrieve import log details."""
+    def list_import_logs(self) -> list[ImportLog]:
+        """List all import logs."""
+    def resolve_unmapped_categories(self, import_id: int) -> None:
+        """Interactively map any new/unmapped categories found in import."""
+```
+
+##### agents/recurring.py
+```python
+class RecurringAgent:
+    def detect_patterns(self) -> list[RecurringPattern]:
+        """Identify recurring expenses using pattern matching."""
+    def confirm_pattern(self, pattern_id: int) -> None:
+        """User confirms a detected recurring pattern."""
+    def list_recurring(self) -> list[RecurringPattern]:
+        """List current recurring expense patterns."""
+```
+
+##### agents/comparison.py
+```python
+class ComparisonAgent:
+    def compare_expenses(self, range1: tuple[date, date], range2: tuple[date, date], by: str='category') -> dict:
+        """Compute spending aggregates (by category/account etc) for two time ranges."""
+    def aggregate_expenses(self, date_range: tuple[date, date], group_by: str='category') -> dict:
+        """Aggregate expenses for a date range, grouped by the specified field."""
+```
+
+##### agents/insights.py
+```python
+class InsightAgent:
+    def generate_insights(self, date_range: tuple[date, date]) -> list[Insight]:
+        """Produce insights (trends, anomalies, suggestions) for given period."""
+    def list_insights(self, since: datetime = None) -> list[Insight]:
+        """Fetch generated insights since a date."""
+```
+
+##### agents/visualization.py
+```python
+class VisualizationAgent:
+    def render_chart(self, chart_type: str, data: dict, mode: str = 'ascii') -> str | dict:
+        """Render a chart as ASCII (for CLI) or as JSON (for API) using raw data."""
+    def get_chart_data(self, analysis_result: dict, chart_type: str) -> dict:
+        """Produce a data dictionary ready for chart rendering."""
+```
+
+##### agents/orchestrator.py
 ```python
 class Orchestrator:
-    """Runs the end-to-end workflow for a user upload and analysis session."""
-    def run(self, user_id: str, csv_path: str, bank_name: str, date_range = None):
-        """Import -> normalize -> detect recurring -> compare -> report."""
+    def handle_command(self, command: str, args: dict) -> None:
+        """Route user commands to appropriate agents and coordinate flow."""
 ```
 
-**visualization/reporting.py**
+##### visualization/chart_ascii.py
 ```python
-def generate_text_report(report: ComparisonReport) -> str:
-    """Render report as a readable text summary."""
-
-def generate_charts(report: ComparisonReport, output_dir: str) -> list[str]:
-    """Generate chart images/paths for expense trends and breakdowns."""
+def pie_chart(data: dict) -> str:
+    """Render a pie chart in ASCII for CLI output."""
+def line_chart(data: dict) -> str:
+    """Render a line chart in ASCII."""
+def bar_chart(data: dict) -> str:
+    """Render a bar chart in ASCII."""
 ```
 
-**cli/commands.py**
+##### visualization/chart_json.py
 ```python
-def import_csv_command(args): ...
-def normalize_command(args): ...
-def detect_recurring_command(args): ...
-def compare_command(args): ...
-def show_report_command(args): ...
+def chart_json(data: dict, chart_type: str) -> dict:
+    """Format chart data as a JSON-serializable object."""
 ```
 
-**api/routes.py**
+##### cli/commands.py
 ```python
-# Route handler signatures
-def post_import(request): ...
-def get_transactions(request): ...
-def get_recurring(request): ...
-def get_compare(request): ...
-def get_report(request): ...
+def main():
+    """Entrypoint for CLI: parses input and invokes orchestrator."""
+def add_expense(args): ...
+def list_expenses(args): ...
+def import_csv(args): ...
+# Etc, for each command
 ```
 
-# 4. TODOs and Open Questions
+##### cli/io_utils.py
+```python
+def print_table(data: list[dict], columns: list[str]) -> None:
+    """Print tabular data prettily in the CLI."""
+def prompt_user(prompt: str) -> str:
+    """Prompt user for input (CLI)."""
+```
 
-- Define a minimal, extensible bank-specific CSV parsing interface to accommodate new/variant formats efficiently.
-- Specify precise normalization rules and mechanisms for category mapping (rule-based? ML fallback? hybrid?).
-- Determine transaction deduplication logic—across multiple overlapping CSVs and banks.
-- Design database schema and indexing for scalability (esp. user separation, normalized mappings, and group linkage).
-- Choose visualization/charting library and report output format(s) (e.g., PNG, SVG, HTML fragments).
-- Plan user-facing error and ambiguity handling, particularly for normalization and recurring group assignment.
-- Set up user authentication/authorization model for CLI/API use and data isolation.
-- Finalize approach to configuration (e.g., per-user category overrides, custom recurring rules).
-- Decide storage and lifecycle policies for raw CSV archives (retention period, privacy requirements).
-- Clarify if the application will launch with both CLI and API, and prioritize initial deliverable interfaces.
-- Detail API versioning and input validation strategies.
-- Plan comprehensive test data sets for unit and integration testing scenarios.
+##### tests/test_expenses.py
+```python
+def test_create_expense_valid():
+    """Test adding a valid expense."""
+def test_create_expense_invalid():
+    """Test input validation for expense creation."""
+def test_edit_expense():
+    """Test editing expense fields."""
+```
+
+# ... Similar structure for all test files (CRUD, validation, flows, edge cases) ...
+
+---
+
+4. TODOs and Open Questions
+
+- Confirm if multi-user support is needed in MVP; if so, expand User model, authentication, and context management.
+- Specify exact CSV field mapping/normalization rules; handle ambiguous column headers or missing fields.
+- Decide visualization details for complex comparisons (multiple ranges, hybrid groupings).
+- Define comprehensive rules for recurring expense detection (minimum frequency, description similarity, etc.).
+- Determine config process for new/unmapped categories during import (interactive, deferred, auto?).
+- Finalize requirements for insight heuristics and outputs (breadth, depth, prioritization of suggestions).
+- Outline error handling, logging, and user feedback/error reporting mechanisms.
+- Plan for future extensibility: localization, multi-currency, more sophisticated analytics.
+- Settle on exact CLI command names/options and argument handling conventions.
+- Selection of CLI frameworks (argparse/click/typer) and ORM/backend tech (SQLAlchemy baseline).
+- Address backup and data migration—out of scope for MVP but important for future versions.
